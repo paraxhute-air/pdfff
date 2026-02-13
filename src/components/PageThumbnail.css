@@ -1,0 +1,292 @@
+/* PageThumbnail.css */
+
+.page-thumb-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-thumb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-paper);
+  border: 1px solid var(--color-border);
+  padding: 8px; /* Frame padding */
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Drop shadow */
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.page-thumb:hover {
+  border-color: var(--color-accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* List mode hover override - applied via parent class in PageGrid.css usually, but can't here easily without context.
+   I will edit PageGrid.css for the hover lift removal.
+*/
+
+.page-thumb:active {
+  cursor: grabbing;
+}
+
+.page-thumb--dragging {
+  box-shadow: var(--shadow-lg), var(--shadow-glow-strong);
+  border-color: var(--color-accent-primary);
+  cursor: grabbing;
+}
+
+.page-thumb--selected {
+  border-color: var(--color-accent-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.page-thumb--over {
+  border-color: var(--color-accent-secondary, #00d2ff);
+}
+
+/* ===== Filename hover tooltip (0.5s delay, speech bubble) ===== */
+.page-thumb[data-filename]::after {
+  content: attr(data-filename);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  padding: 5px 10px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 200ms ease, transform 200ms ease;
+  transition-delay: 0s;
+  box-shadow: var(--shadow-md);
+}
+
+/* Speech bubble arrow */
+.page-thumb[data-filename]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  border: 5px solid transparent;
+  border-top-color: var(--color-bg-elevated);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 101;
+  transition: opacity 200ms ease, transform 200ms ease;
+  transition-delay: 0s;
+}
+
+/* Show after 0.5s hover */
+.page-thumb[data-filename]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  transition-delay: 0.5s;
+}
+
+.page-thumb[data-filename]:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  transition-delay: 0.5s;
+}
+
+/* Drop indicators */
+.page-thumb__drop-indicator {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-primary);
+  box-shadow: 0 0 12px var(--color-accent-primary);
+  animation: indicatorPulse 0.8s ease-in-out infinite;
+}
+
+.page-thumb__drop-indicator--left {
+  top: 4px;
+  bottom: 4px;
+  left: -10px;
+  width: 4px;
+}
+
+.page-thumb__drop-indicator--right {
+  top: 4px;
+  bottom: 4px;
+  right: -10px;
+  width: 4px;
+}
+
+.page-thumb__drop-indicator--top {
+  left: 4px;
+  right: 4px;
+  top: -10px;
+  height: 4px;
+}
+
+.page-thumb__drop-indicator--bottom {
+  left: 4px;
+  right: 4px;
+  bottom: -10px;
+  height: 4px;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Delete button */
+.page-thumb__delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 77, 109, 0.85);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 5;
+}
+
+.page-thumb__delete:hover {
+  background: var(--color-danger);
+  transform: scale(1.1);
+}
+
+.page-thumb:hover .page-thumb__delete {
+  opacity: 1;
+}
+
+.page-thumb__delete--confirm {
+  opacity: 1 !important;
+  background: var(--color-danger);
+  animation: deleteConfirmPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes deleteConfirmPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* Image */
+.page-thumb__image-wrap {
+  width: 100%;
+  /* aspect-ratio removed to support original file shape */
+  /* min-height removed to fit content exactly */
+  overflow: hidden;
+  border-radius: 0;
+  background: #f8f8f8; /* Image placeholder bg */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-thumb__image {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.page-thumb__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Page number (outside card) */
+.page-thumb__number {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-accent-primary);
+  text-align: center;
+}
+
+/* Drag overlay clone */
+.page-thumb--overlay {
+  box-shadow: var(--shadow-lg), var(--shadow-glow-strong);
+  border-color: var(--color-accent-primary);
+  transform: scale(1.05) rotate(2deg);
+  cursor: grabbing;
+  opacity: 0.85;
+}
+
+/* Divider Trigger */
+.page-thumb__divider-trigger {
+  position: absolute;
+  z-index: 50;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  /* 드래그 방지용으로 onClick에서 stopPropagation하지만 pointer-events는 auto여야 함 */
+}
+
+.page-thumb__divider-trigger:hover {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+.page-thumb__divider-trigger--list {
+  left: 0; right: 0; bottom: -8px; height: 8px;
+}
+.page-thumb__divider-trigger--grid {
+  top: 0; bottom: 0; right: -16px; width: 16px;
+}
+
+/* Visual Line */
+.page-thumb__divider-trigger::after {
+  content: '';
+  position: absolute;
+  background-color: #d32f2f; /* Darker red */
+  opacity: 0;
+  transition: opacity 0.2s, height 0.2s, width 0.2s;
+  pointer-events: none;
+}
+
+.page-thumb__divider-trigger:hover::after {
+  opacity: 0.6;
+}
+
+.page-thumb__divider-trigger--active::after {
+  opacity: 1 !important;
+}
+
+/* List Mode Line */
+.page-thumb__divider-trigger--list::after {
+  left: 0; right: 0; top: 65%; height: 2px; transform: translateY(-50%);
+}
+.page-thumb__divider-trigger--list.page-thumb__divider-trigger--active::after {
+  height: 4px;
+}
+
+/* Grid Mode Line */
+.page-thumb__divider-trigger--grid::after {
+  top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%);
+}
+.page-thumb__divider-trigger--grid.page-thumb__divider-trigger--active::after {
+  width: 4px;
+}

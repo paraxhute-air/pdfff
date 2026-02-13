@@ -1,0 +1,81 @@
+/* PageGrid.css */
+
+/* Grid mode (B모드) */
+.page-grid--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-md);
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-bg-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* List mode (A모드 사이드바) */
+.page-grid--list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.page-grid--list .page-thumb-wrapper {
+  position: relative;
+  flex-direction: row;
+  justify-content: center; /* Center thumbnail */
+  align-items: flex-end;
+  gap: 0;
+  padding: 0 var(--space-md); /* Add padding for safe area */
+}
+
+.page-grid--list .page-thumb {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.page-grid--list .page-thumb:hover {
+  transform: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.page-grid--list .page-thumb__image-wrap {
+  /* aspect-ratio removed for original shape */
+  width: 100%;
+}
+
+.page-grid--list .page-thumb__meta {
+  display: none; /* Hide old meta container if existing */
+}
+
+.page-grid--list .page-thumb__number {
+  position: absolute;
+  right: 16px; /* Fixed right alignment */
+  bottom: 8px;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.page-grid--list .page-thumb__label {
+  font-size: 11px;
+}
+
+/* Drag overlay for list mode */
+.page-thumb--overlay-list {
+  width: 120px;
+  transform: scale(1.08) rotate(1deg);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .page-grid--grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-sm);
+  }
+}
+
+@media (min-width: 1200px) {
+  .page-grid--grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}

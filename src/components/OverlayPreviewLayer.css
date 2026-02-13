@@ -1,0 +1,169 @@
+/* OverlayPreviewLayer.css */
+
+.overlay-preview-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* 클릭 통과 (이미지 조작 방해 안 함) */
+  overflow: hidden;
+  font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  z-index: 10;
+}
+
+.overlay-item {
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: auto; /* Enable interaction */
+  cursor: grab;
+}
+.overlay-item:active {
+  cursor: grabbing;
+}
+
+/* Watermark */
+.watermark {
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(var(--rotation, 45deg));
+  padding: 0.4em; /* 테두리 패딩 */
+}
+
+/* Image Specific */
+.overlay-item.image {
+  /* Scale applied via variable to avoid override interactions with translate/rotate */
+  transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1));
+}
+
+.overlay-item.image.position-middle-center {
+   /* Override for centered presets to include translate */
+   transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) scale(var(--scale, 1));
+}
+.overlay-item.image.position-top-center { transform: translateX(-50%) rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); }
+.overlay-item.image.position-bottom-center { transform: translateX(-50%) rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); }
+.overlay-item.image.position-middle-left { transform: translateY(-50%) rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); }
+.overlay-item.image.position-middle-right { transform: translateY(-50%) rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); }
+
+/* Standard Presets (Text/Default) - Maintain origin */
+.position-top-left { left: 24px; top: 24px; transform: rotate(var(--rotation, 45deg)); transform-origin: top left; }
+.position-top-right { right: 24px; top: 24px; transform: rotate(var(--rotation, 45deg)); transform-origin: top right; }
+
+.position-bottom-left { left: 24px; bottom: 24px; transform: rotate(var(--rotation, 45deg)); transform-origin: bottom left; }
+.position-bottom-right { right: 24px; bottom: 24px; transform: rotate(var(--rotation, 45deg)); transform-origin: bottom right; }
+
+/* Image Presets Override (Need scale) - Origin Center for Image usually? 
+   If Image rotates, top-left origin might swing it out.
+   Let's force Center origin for Image presets + standard pos.
+   But standard pos top-left uses left/top.
+   If we center origin, it rotates around its own center at top-left. Correct.
+*/
+.overlay-item.image.position-top-left { transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); transform-origin: center; }
+.overlay-item.image.position-top-right { transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); transform-origin: center; }
+.overlay-item.image.position-bottom-left { transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); transform-origin: center; }
+.overlay-item.image.position-bottom-right { transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1)); transform-origin: center; }
+
+/* Stamp (No rotation by default, dynamic var) */
+.stamp {
+  transform: rotate(var(--stamp-rotation, 0deg));
+  padding: 0.4em;
+}
+.stamp.position-top-left { left: 24px; top: 24px; transform: rotate(var(--stamp-rotation, 0deg)); transform-origin: top left; }
+.stamp.position-top-center { left: 50%; top: 24px; transform: translateX(-50%) rotate(var(--stamp-rotation, 0deg)); }
+.stamp.position-top-right { right: 24px; top: 24px; transform: rotate(var(--stamp-rotation, 0deg)); transform-origin: top right; }
+
+.stamp.position-middle-left { left: 24px; top: 50%; transform: translateY(-50%) rotate(var(--stamp-rotation, 0deg)); }
+.stamp.position-middle-center { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(var(--stamp-rotation, 0deg)); }
+.stamp.position-middle-right { right: 24px; top: 50%; transform: translateY(-50%) rotate(var(--stamp-rotation, 0deg)); }
+
+.stamp.position-bottom-left { left: 24px; bottom: 24px; transform: rotate(var(--stamp-rotation, 0deg)); transform-origin: bottom left; }
+.stamp.position-bottom-center { left: 50%; bottom: 24px; transform: translateX(-50%) rotate(var(--stamp-rotation, 0deg)); }
+.stamp.position-bottom-right { right: 24px; bottom: 24px; transform: rotate(var(--stamp-rotation, 0deg)); transform-origin: bottom right; }
+
+
+/* Header/Footer Align */
+
+/* Divider */
+.divider {
+  position: absolute;
+  background-color: var(--color, #000);
+  opacity: var(--opacity, 1);
+}
+
+.divider-horizontal {
+  left: 0;
+  width: 100%;
+  height: var(--thickness, 2px);
+  top: var(--position, 50%);
+  transform: translateY(-50%);
+}
+
+.divider-vertical {
+  top: 0;
+  height: 100%;
+  width: var(--thickness, 2px);
+  left: var(--position, 50%);
+  transform: translateX(-50%);
+}
+
+/* Interactive Handles */
+.overlay-item.is-selected {
+  outline: 2px dashed #1a237e; /* Navy */
+  z-index: 100;
+}
+
+.resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 1px solid #1a237e; /* Navy */
+  border-radius: 50%;
+  z-index: 101;
+  /* Counter-scale handles so they don't distort when parent scales */
+  transform: scale(calc(1 / var(--scale, 1))); 
+}
+
+.resize-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.resize-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.resize-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resize-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.rotate-handle {
+  position: absolute;
+  top: -30px; /* Give more space */
+  left: 50%;
+  /* Counter-scale */
+  transform: translateX(-50%) scale(calc(1 / var(--scale, 1)));
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 1px solid #1a237e; /* Navy */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 101;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.rotate-handle:active {
+  cursor: grabbing;
+}
+.rotate-handle::after {
+  content: '⟳'; 
+  font-size: 14px; 
+  color: #1a237e; /* Navy */
+  line-height: 1;
+}
+
+/* Line connecting rotate handle */
+.rotate-line {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  height: 30px;
+  width: 2px;
+  background-color: #1a237e; /* Navy */
+  transform: translateX(-0.5px) scaleX(calc(1 / var(--scale, 1)));
+  transform-origin: bottom;
+}

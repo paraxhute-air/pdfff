@@ -1,0 +1,44 @@
+/* ThemeToggle.css */
+
+.theme-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.theme-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.theme-toggle__btn:hover {
+  color: var(--color-text-primary);
+}
+
+/* 활성: 해 = 주황, 달 = 보라 */
+.theme-toggle__btn--active {
+  box-shadow: var(--shadow-sm);
+  color: #fff;
+}
+
+/* 해 활성 */
+.theme-toggle__btn--active:first-child {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+}
+
+/* 달 활성 */
+.theme-toggle__btn--active:last-child {
+  background: linear-gradient(135deg, #8b5cf6, #6c63ff);
+}
