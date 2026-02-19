@@ -45,7 +45,7 @@ export default function OverlaySettings({
   localOverlay, onLocalChange, 
   isPageSelected 
 }) {
-  const [expandedSections, setExpandedSections] = useState(new Set(['local-text'])); 
+  const [expandedSections, setExpandedSections] = useState(new Set()); 
 
   const getOverlay = (scope) => scope === 'local' ? (localOverlay || {}) : globalOverlay;
   const getOnChange = (scope) => scope === 'local' ? onLocalChange : onGlobalChange;

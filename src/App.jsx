@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { FileText, Trash2, LayoutGrid, Columns, ChevronLeft, ChevronRight, AlertTriangle, Loader } from 'lucide-react';
+import { FileText, Trash2, LayoutGrid, Columns, ChevronLeft, ChevronRight, AlertTriangle, Loader, ZoomIn, ZoomOut } from 'lucide-react';
 import DropZone from './components/DropZone';
 import PageGrid from './components/PageGrid';
 import OverlaySettings from './components/OverlaySettings';
@@ -68,12 +68,13 @@ export default function App() {
   const hasChanges = lastGeneratedConfig && currentConfigSignature !== lastGeneratedConfig;
 
   // 뷰 모드: 'preview' (A모드) | 'grid' (B모드)
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('preview');
   const [selectedPageId, setSelectedPageId] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null); 
   const [dividers, setDividers] = useState(new Set()); 
   const [previewImage, setPreviewImage] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState(1.0);
 
   const blobUrlRef = useRef(null);
 
@@ -139,6 +140,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedPageId || viewMode !== 'preview') {
       setPreviewImage(null);
+      setPreviewZoom(1.0);
       return;
     }
     const page = pages.find((p) => p.id === selectedPageId);
@@ -300,6 +302,7 @@ export default function App() {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
     }
+    setPreviewZoom(1.0);
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -354,6 +357,7 @@ export default function App() {
 
   const handleSelectPage = useCallback((pageId) => {
     setSelectedPageId(pageId);
+    setPreviewZoom(1.0);
   }, []);
 
   const handlePrevPage = useCallback(() => {
@@ -367,6 +371,9 @@ export default function App() {
     const idx = pages.findIndex((p) => p.id === selectedPageId);
     if (idx < pages.length - 1) setSelectedPageId(pages[idx + 1].id);
   }, [selectedPageId, pages]);
+
+  const handleZoomIn = () => setPreviewZoom(prev => Math.min(prev + 0.1, 3.0));
+  const handleZoomOut = () => setPreviewZoom(prev => Math.max(prev - 0.1, 0.5));
 
   const hasPages = pages.length > 0;
   const selectedThumbnail = selectedPageId ? thumbnails.get(selectedPageId) : null;
@@ -490,19 +497,34 @@ export default function App() {
               <div className="editor-preview-area">
                 <div className="editor-preview__content">
                   {previewImage ? (
-                    <div className="editor-preview__image-wrapper">
-                      <img
-                        src={previewImage}
-                        alt={`페이지 ${selectedIndex + 1}`}
-                        className="editor-preview__image"
-                      />
-                      <OverlayPreviewLayer 
-                        globalOverlay={overlay} 
-                        localOverlay={currentLocalOverlay}
-                        onGlobalUpdate={(u) => setOverlay(prev => ({ ...prev, ...u }))} 
-                        onLocalUpdate={handleLocalOverlayChange}
-                      />
-                    </div>
+                    <>
+                      <div className="editor-preview__scroll-container">
+                        <div 
+                          className="editor-preview__image-wrapper"
+                          style={{ 
+                             zoom: previewZoom,
+                             transformOrigin: 'top left',
+                          }}
+                        >
+                          <img
+                            src={previewImage}
+                            alt={`페이지 ${selectedIndex + 1}`}
+                            className="editor-preview__image"
+                          />
+                          <OverlayPreviewLayer 
+                            globalOverlay={overlay} 
+                            localOverlay={currentLocalOverlay}
+                            onGlobalUpdate={(u) => setOverlay(prev => ({ ...prev, ...u }))} 
+                            onLocalUpdate={handleLocalOverlayChange}
+                          />
+                        </div>
+                      </div>
+                      {selectedPage && (
+                        <div className="editor-preview__filename-overlay">
+                          {selectedPage.pageLabel}
+                        </div>
+                      )}
+                    </>
                   ) : previewLoading || selectedThumbnail ? (
                      <div className="editor-preview__loading-wrap">
                        {selectedThumbnail && (
@@ -532,11 +554,22 @@ export default function App() {
                   </button>
                   <span className="editor-preview__page-info">
                     {selectedIndex + 1} / {pages.length}
-                    {selectedPage && <span className="editor-preview__page-label">{selectedPage.pageLabel}</span>}
                   </span>
                   <button className="btn btn-secondary btn-icon" onClick={handleNextPage} disabled={selectedIndex >= pages.length - 1}>
                     <ChevronRight size={18} />
                   </button>
+                  <div className="editor-preview__nav-divider" />
+                  
+                  <button className="btn btn-secondary btn-icon" onClick={handleZoomOut} title="축소">
+                    <ZoomOut size={16} />
+                  </button>
+                  <span style={{ fontSize: '12px', minWidth: '40px', textAlign: 'center' }}>
+                    {Math.round(previewZoom * 100)}%
+                  </span>
+                  <button className="btn btn-secondary btn-icon" onClick={handleZoomIn} title="확대">
+                    <ZoomIn size={16} />
+                  </button>
+                  
                   <div className="editor-preview__nav-divider" />
                   <button className="btn btn-secondary editor-preview__delete-btn" onClick={handlePreviewDelete} disabled={!selectedPageId}>
                     <Trash2 size={14} /> 페이지 삭제

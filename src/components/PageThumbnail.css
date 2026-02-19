@@ -254,39 +254,56 @@
   left: 0; right: 0; bottom: -8px; height: 8px;
 }
 .page-thumb__divider-trigger--grid {
-  top: 0; bottom: 0; right: -16px; width: 16px;
+  top: -8px; bottom: -8px; right: -16px; width: 16px;
 }
 
 /* Visual Line */
-.page-thumb__divider-trigger::after {
-  content: '';
+/* Visual Line Container */
+.page-thumb__divider-visual {
   position: absolute;
-  background-color: #d32f2f; /* Darker red */
   opacity: 0;
-  transition: opacity 0.2s, height 0.2s, width 0.2s;
+  transition: opacity 0.2s;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d32f2f; /* Darker red */
 }
 
-.page-thumb__divider-trigger:hover::after {
+.page-thumb__divider-trigger:hover .page-thumb__divider-visual {
   opacity: 0.6;
 }
 
-.page-thumb__divider-trigger--active::after {
+.page-thumb__divider-trigger--active .page-thumb__divider-visual {
   opacity: 1 !important;
 }
 
-/* List Mode Line */
-.page-thumb__divider-trigger--list::after {
-  left: 0; right: 0; top: 65%; height: 2px; transform: translateY(-50%);
-}
-.page-thumb__divider-trigger--list.page-thumb__divider-trigger--active::after {
-  height: 4px;
+/* List Mode Style: >-------< */
+.page-thumb__divider-trigger--list .page-thumb__divider-visual {
+  left: 50%; top: 50%; height: 2px; /* Set height directly to 2px */
+  width: 100%; /* Back to 100% since no arrows */
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  background: #d32f2f; /* Solid red background */
 }
 
-/* Grid Mode Line */
-.page-thumb__divider-trigger--grid::after {
-  top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%);
+/* The Line (Middle) - Removed background gradient, using background directly above */
+
+/* Arrows Removed */
+
+
+/* Grid Mode Implementation (Vertical) */
+/* V-------^ */
+/* Top: V (Point Down) */
+/* Bottom: ^ (Point Up) */
+.page-thumb__divider-trigger--grid .page-thumb__divider-visual {
+  top: 0; bottom: 0; left: 50%; width: 2px; /* 2px wide line */
+  transform: translateX(-50%);
+  background: #d32f2f; /* Solid red */
 }
-.page-thumb__divider-trigger--grid.page-thumb__divider-trigger--active::after {
-  width: 4px;
-}
+
+/* Arrows Removed */

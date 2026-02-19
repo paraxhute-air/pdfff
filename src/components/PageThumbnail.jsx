@@ -83,7 +83,9 @@ export default function PageThumbnail({ page, thumbnail, index, onDelete, isOver
             onToggleDivider && onToggleDivider();
           }}
           title="클릭하여 구분선 토글"
-        />
+        >
+          <span className="page-thumb__divider-visual"></span>
+        </div>
       </div>
 
       {/* 카드 바깥: 페이지 번호만 표시 */}
