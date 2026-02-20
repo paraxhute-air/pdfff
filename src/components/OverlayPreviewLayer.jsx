@@ -166,17 +166,19 @@ export default function OverlayPreviewLayer({
        fontSize = config.fontSize || 60;
        
        const color = config.color || { r:0.5, g:0.5, b:0.5 };
-       
+       const colorStr = getColor(color);
+
        style = {
-          color: getColor(color),
+          color: colorStr,
           opacity: config.opacity ?? 0.4,
           fontSize: `${fontSize}px`,
           fontWeight: config.textStyle?.bold ? 'bold' : 'normal',
           fontStyle: config.textStyle?.italic ? 'italic' : 'normal',
           textDecoration: config.textStyle?.underline ? 'underline' : 'none',
           fontFamily: getFontFamily(config.fontFamily),
-          border: config.border ? `2px solid ${getColor(color)}` : 'none',
-          padding: '4px',
+          border: config.border ? `2px solid ${colorStr}` : 'none',
+          padding: '0.15em 0.3em', // Tight padding
+          lineHeight: 1, // Ensure tight vertical alignment
           whiteSpace: 'nowrap'
        };
     }

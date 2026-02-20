@@ -15,13 +15,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
  * @param {number} scale - 렌더링 스케일 (기본 0.5)
  * @returns {Promise<string>} 썸네일 이미지 Data URL
  */
-export async function renderThumbnail(pdfBytes, scale = 0.5) {
+export async function renderThumbnail(pdfBytes, scale = 0.5, rotation = 0) {
   try {
     const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice(0) });
     const pdf = await loadingTask.promise;
     const page = await pdf.getPage(1);
 
-    const viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({ scale, rotation });
     const canvas = document.createElement('canvas');
     canvas.width = Math.floor(viewport.width);
     canvas.height = Math.floor(viewport.height);

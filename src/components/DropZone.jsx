@@ -71,16 +71,24 @@ export default function DropZone({ onFilesSelected, isCompact = false, disabled 
 
   if (isCompact) {
     return (
-      <>
-        <button
-          className="btn btn-secondary dropzone-compact"
-          onClick={handleClick}
-          disabled={disabled}
-          data-tooltip="파일 추가하기"
-        >
-          <Plus size={18} />
-          <span>파일 추가</span>
-        </button>
+      <div
+        className={`dropzone-compact-area ${isDragOver ? 'dropzone-compact-area--active' : ''} ${disabled ? 'dropzone--disabled' : ''}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={handleClick}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="dropzone-compact__content">
+          <div className="dropzone-compact__icon">
+            {isDragOver ? <Upload size={24} /> : <Plus size={24} />}
+          </div>
+          <p className="dropzone-compact__text">
+            {isDragOver ? "여기에 놓으세요" : "추가 파일을 드롭하세요"}
+          </p>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -89,7 +97,7 @@ export default function DropZone({ onFilesSelected, isCompact = false, disabled 
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-      </>
+      </div>
     );
   }
 

@@ -94,6 +94,7 @@ export async function splitPdfPages(pdfBytes, fileName) {
       pageLabel: `${fileName} - ${i + 1}/${pageCount}`,
       width,
       height,
+      rotation: 0,
     });
   }
 
@@ -131,6 +132,7 @@ export async function imageToPdfPage(imageBytes, fileName, mimeType) {
     pageLabel: fileName,
     width,
     height,
+    rotation: 0,
   };
 }
 
@@ -147,6 +149,12 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
   for (const pageData of pages) {
     const srcDoc = await PDFDocument.load(pageData.pageBytes);
     const [copiedPage] = await finalDoc.copyPages(srcDoc, [0]);
+    
+    // Apply page-specific rotation if exists
+    if (pageData.rotation) {
+      copiedPage.setRotation(degrees(pageData.rotation));
+    }
+    
     finalDoc.addPage(copiedPage);
   }
 
@@ -221,7 +229,7 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
        
        const cx = pos.x + widthOfText / 2;
        const cy = pos.y + heightOfText / 2;
-       const textCoords = getRotatedCoords(cx, cy, widthOfText, heightOfText * 0.8, angle);
+       const textCoords = getRotatedCoords(cx, cy, widthOfText, heightOfText, angle);
 
        const drawOpts = {
           x: textCoords.x,
@@ -233,6 +241,7 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           rotate: textCoords.rotate,
        };
 
+       // Main Text Fill
        page.drawText(text, drawOpts);
 
        // Bold Simulation
@@ -254,12 +263,16 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           });
        }
 
-       // Border
+       // Border (Padded Box)
        if (config.border) {
-          const pad = fontSize * 0.3;
-          const boxW = widthOfText + pad*2;
-          const boxH = heightOfText + pad; 
-          const boxCoords = getRotatedCoords(cx, cy, boxW, boxH, angle);
+          const padY = fontSize * 0.12; // Tight vertical
+          const padX = fontSize * 0.25; // Snug horizontal
+          const boxW = widthOfText + padX * 2;
+          const boxH = heightOfText + padY * 2; 
+          
+          // Adjust cy slightly for visual centering in tight box
+          const boxCoords = getRotatedCoords(cx, cy + (fontSize * 0.02), boxW, boxH, angle);
+          
           page.drawRectangle({
              x: boxCoords.x, y: boxCoords.y, width: boxW, height: boxH,
              borderColor: color, borderWidth: fontSize * 0.05, opacity, rotate: boxCoords.rotate

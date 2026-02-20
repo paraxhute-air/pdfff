@@ -76,14 +76,23 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
+  gap: 8px;
+  padding: 10px 12px 10px 0;
   background: none;
   border: none;
-  cursor: pointer;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
   color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0; /* Allow shrinking for ellipsis */
+}
+
+.overlay-section__label-btn span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .overlay-section__label-btn:hover {

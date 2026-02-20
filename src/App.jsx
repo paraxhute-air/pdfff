@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { FileText, Trash2, LayoutGrid, Columns, ChevronLeft, ChevronRight, AlertTriangle, Loader, ZoomIn, ZoomOut } from 'lucide-react';
+import { FileText, Trash2, LayoutGrid, Columns, ChevronLeft, ChevronRight, AlertTriangle, Loader, ZoomIn, ZoomOut, RotateCcw, RotateCw } from 'lucide-react';
 import DropZone from './components/DropZone';
 import PageGrid from './components/PageGrid';
 import OverlaySettings from './components/OverlaySettings';
@@ -42,6 +42,20 @@ const DEFAULT_OVERLAY = {
   imageRotation: 0,
   imagePosition: 'middle-center',
 };
+
+const RotateLeftIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 19v-7a4 4 0 0 0-4-4H5" />
+    <path d="M9 12L5 8l4-4" />
+  </svg>
+);
+
+const RotateRightIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 19v-7a4 4 0 0 1 4-4h9" />
+    <path d="M15 12l4-4-4-4" />
+  </svg>
+);
 
 export default function App() {
   // 상태 관리 (Global)
@@ -148,7 +162,7 @@ export default function App() {
 
     let cancelled = false;
     setPreviewLoading(true);
-    renderThumbnail(page.pageBytes, 2.0).then((dataUrl) => {
+    renderThumbnail(page.pageBytes, 2.0, page.rotation || 0).then((dataUrl) => {
       if (!cancelled && dataUrl) {
         setPreviewImage(dataUrl);
       }
@@ -375,6 +389,38 @@ export default function App() {
   const handleZoomIn = () => setPreviewZoom(prev => Math.min(prev + 0.1, 3.0));
   const handleZoomOut = () => setPreviewZoom(prev => Math.max(prev - 0.1, 0.5));
 
+  const handleRotate = useCallback((direction) => {
+    if (!selectedPageId) return;
+    
+    setPages(prev => prev.map(p => {
+      if (p.id === selectedPageId) {
+        const currentRotation = p.rotation || 0;
+        const nextRotation = (currentRotation + (direction === 'left' ? -90 : 90)) % 360;
+        // Normalize to positive 0, 90, 180, 270
+        const normalizedRotation = (nextRotation + 360) % 360;
+        return { ...p, rotation: normalizedRotation };
+      }
+      return p;
+    }));
+
+    // Re-render thumbnail for the rotated page
+    const page = pages.find(p => p.id === selectedPageId);
+    if (page) {
+      renderThumbnail(page.pageBytes, 0.5, (page.rotation || 0) + (direction === 'left' ? -90 : 90)).then(dataUrl => {
+        if (dataUrl) {
+          setThumbnails(prev => {
+            const next = new Map(prev);
+            next.set(selectedPageId, dataUrl);
+            return next;
+          });
+        }
+      });
+    }
+
+    setGeneratedUrl(null);
+    setGeneratedBytes(null);
+  }, [selectedPageId, pages]);
+
   const hasPages = pages.length > 0;
   const selectedThumbnail = selectedPageId ? thumbnails.get(selectedPageId) : null;
   const selectedIndex = selectedPageId ? pages.findIndex((p) => p.id === selectedPageId) : -1;
@@ -390,7 +436,21 @@ export default function App() {
       <header className="app-header">
         <div className="app-header__brand">
           <div className="app-header__logo">
-            <span className="app-header__logo-text">P</span>
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Option 5: Solid Gradient Background with enlarged white icon */}
+              <rect width="64" height="64" rx="16" fill="url(#header-logo-grad)" />
+              <path d="M16 12C16 10.8954 16.8954 10 18 10H38L48 20V52C48 53.1046 47.1046 54 46 54H18C16.8954 54 16 53.1046 16 52V12Z" fill="white" />
+              <path d="M38 10V18C38 19.1046 38.8954 20 40 20H48L38 10Z" fill="#e2e8f0" />
+              <text x="32" y="36" text-anchor="middle" fill="#6c63ff" font-family="system-ui, sans-serif" font-weight="900" font-size="12">PDF</text>
+              <rect x="22" y="40" width="20" height="2" rx="1" fill="#cbd5e1" />
+              <rect x="22" y="45" width="14" height="2" rx="1" fill="#cbd5e1" />
+              <defs>
+                <linearGradient id="header-logo-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#6c63ff"/>
+                  <stop offset="1" stopColor="#00d2ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
           <div>
             <h1 className="app-header__title">PDFFF.</h1>
@@ -471,27 +531,29 @@ export default function App() {
           {viewMode === 'preview' ? (
             /* ========= A모드: 좌측 리스트 + 우측 프리뷰 ========= */
             <div className="editor-layout editor-layout--preview">
-              {/* 좌측 사이드바: 세로 썸네일 리스트 */}
-              <div className="editor-sidebar-left">
-                 <div className="editor-sidebar-left__header">
-                   <span className="editor-sidebar-left__count" style={{ color: '#4f46e5' }}>
-                     총 <strong>{pages.length}</strong>페이지
-                   </span>
-                 </div>
-                 <div className="editor-sidebar-left__list">
-                   <PageGrid
-                     pages={pages}
-                     thumbnails={thumbnails}
-                     dividers={dividers}
-                     onToggleDivider={handleToggleDivider}
-                     onReorder={handleReorder}
-                     onDelete={handleDeleteRequest}
-                     viewMode="list"
-                     selectedPageId={selectedPageId}
-                     onSelectPage={handleSelectPage}
-                   />
-                 </div>
+              <aside className="editor-sidebar-left">
+              <div className="editor-sidebar-left__header">
+                <span className="editor-sidebar-left__count">
+                  총 <strong>{pages.length}</strong>페이지
+                </span>
               </div>
+              <div className="editor-sidebar-left__list">
+                <PageGrid
+                  pages={pages}
+                  thumbnails={thumbnails}
+                  dividers={dividers}
+                  onToggleDivider={handleToggleDivider}
+                  onReorder={handleReorder}
+                  onDelete={handleDeleteRequest}
+                  viewMode="list"
+                  selectedPageId={selectedPageId}
+                  onSelectPage={handleSelectPage}
+                />
+                <div className="editor-sidebar-left__list-footer">
+                  <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
+                </div>
+              </div>
+            </aside>
 
               {/* 우측: 큰 프리뷰 */}
               <div className="editor-preview-area">
@@ -549,43 +611,70 @@ export default function App() {
 
                 {/* 페이지 네비게이션 + 삭제 */}
                 <div className="editor-preview__nav">
-                  <button className="btn btn-secondary btn-icon" onClick={handlePrevPage} disabled={selectedIndex <= 0}>
+                  <button 
+                    className="btn btn-secondary btn-icon" 
+                    onClick={handlePrevPage} 
+                    disabled={selectedIndex <= 0}
+                    title="이전 페이지"
+                  >
                     <ChevronLeft size={18} />
                   </button>
-                  <span className="editor-preview__page-info">
+                  <div className="editor-preview__page-info">
                     {selectedIndex + 1} / {pages.length}
-                  </span>
-                  <button className="btn btn-secondary btn-icon" onClick={handleNextPage} disabled={selectedIndex >= pages.length - 1}>
+                  </div>
+                  <button 
+                    className="btn btn-secondary btn-icon" 
+                    onClick={handleNextPage} 
+                    disabled={selectedIndex >= pages.length - 1}
+                    title="다음 페이지"
+                  >
                     <ChevronRight size={18} />
                   </button>
+                  
                   <div className="editor-preview__nav-divider" />
                   
                   <button className="btn btn-secondary btn-icon" onClick={handleZoomOut} title="축소">
-                    <ZoomOut size={16} />
+                    <ZoomOut size={18} />
                   </button>
-                  <span style={{ fontSize: '12px', minWidth: '40px', textAlign: 'center' }}>
+                  <div className="toolbar-label">
                     {Math.round(previewZoom * 100)}%
-                  </span>
+                  </div>
                   <button className="btn btn-secondary btn-icon" onClick={handleZoomIn} title="확대">
-                    <ZoomIn size={16} />
+                    <ZoomIn size={18} />
                   </button>
                   
                   <div className="editor-preview__nav-divider" />
-                  <button className="btn btn-secondary editor-preview__delete-btn" onClick={handlePreviewDelete} disabled={!selectedPageId}>
-                    <Trash2 size={14} /> 페이지 삭제
+                  
+                  <button className="btn btn-secondary btn-icon" onClick={() => handleRotate('left')} title="왼쪽으로 90도 회전">
+                    <RotateLeftIcon size={18} />
+                  </button>
+                  <div className="toolbar-label">회전</div>
+                  <button className="btn btn-secondary btn-icon" onClick={() => handleRotate('right')} title="오른쪽으로 90도 회전">
+                    <RotateRightIcon size={18} />
+                  </button>
+
+                  <div className="editor-preview__nav-divider" />
+                  
+                  <button 
+                    className="btn btn-secondary editor-preview__delete-btn" 
+                    onClick={handlePreviewDelete} 
+                    disabled={!selectedPageId}
+                    title="현재 페이지 삭제"
+                  >
+                    <Trash2 size={16} />
+                    <span style={{ marginLeft: '4px' }}>삭제</span>
                   </button>
                 </div>
               </div>
 
-              {/* 우측 사이드바: 파일 추가 + 오버레이 설정 */}
+              {/* 우측 사이드바: 오버레이 설정 */}
               <aside className="editor-sidebar">
-                <div className="editor-sidebar__add">
-                  <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
+                <div className="editor-sidebar__generate">
                   <button
                     className="btn btn-primary"
                     onClick={handleGenerate}
                     disabled={isGenerating || pages.length === 0}
-                    style={{ width: '100%', marginTop: '12px', justifyContent: 'center' }}
+                    style={{ width: '100%', marginBottom: '12px', justifyContent: 'center' }}
                   >
                     {isGenerating ? <><Loader size={18} className="action-spinner" />생성 중...</> : <><FileText size={18} />PDF 생성</>}
                   </button>
@@ -629,14 +718,12 @@ export default function App() {
                 />
               </div>
               <aside className="editor-sidebar">
-                {/* Sidebar in Grid Mode also needs Settings? Yes. */}
-                <div className="editor-sidebar__add">
-                  <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
+                <div className="editor-sidebar__generate">
                   <button
                     className="btn btn-primary"
                     onClick={handleGenerate}
                     disabled={isGenerating || pages.length === 0}
-                    style={{ width: '100%', marginTop: '12px', justifyContent: 'center' }}
+                    style={{ width: '100%', marginBottom: '12px', justifyContent: 'center' }}
                   >
                     {isGenerating ? <><Loader size={18} className="action-spinner" />생성 중...</> : <><FileText size={18} />PDF 생성</>}
                   </button>

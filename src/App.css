@@ -41,17 +41,6 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-accent-gradient);
-  color: #fff;
-  box-shadow: var(--shadow-glow);
-}
-
-.app-header__logo-text {
-  font-size: 20px;
-  font-weight: 900;
-  font-family: var(--font-family);
-  line-height: 1;
 }
 
 .app-header__title {
@@ -184,13 +173,17 @@
 .editor-sidebar {
   position: sticky;
   top: 80px;
-  align-self: start;
-  max-height: calc(100dvh - 100px);
+  height: 100%;
+  background: var(--color-bg-canvas); /* Added background */
+  border: 1px solid var(--color-border); /* Added border */
+  border-radius: var(--radius-md); /* Added border-radius */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding-bottom: var(--space-2xl);
+  padding: var(--space-md); /* Balanced padding */
+  scrollbar-width: thin;
+  scrollbar-gutter: stable; /* Reserve space for scrollbar */
 }
 
 .editor-sidebar__add {
@@ -212,15 +205,14 @@
   display: flex;
   flex-direction: column;
   width: 200px;
-  max-height: calc(100dvh - 140px);
-  background: var(--color-bg-canvas); /* New background */
+  height: 100%; /* Match preview area height */
+  background: var(--color-bg-canvas);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
   transition: width 250ms ease;
   position: sticky;
   top: 80px;
-  align-self: start;
 }
 
 .editor-sidebar-left--collapsed {
@@ -255,12 +247,16 @@
   scrollbar-width: thin;
 }
 
+.editor-sidebar-left__list-footer {
+  padding: var(--space-xs) 0 var(--space-sm);
+}
+
 /* Preview area */
 .editor-preview-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-xs); /* Reduced gap to lower toolbar */
   min-height: 0;
   height: 100%; 
   max-width: 100%;
@@ -286,7 +282,7 @@
   height: 100%;
   overflow: auto;
   display: flex;
-  padding: var(--space-md);
+  padding: var(--space-xs); /* Smaller padding */
 }
 
 .editor-preview__image-wrapper {
@@ -301,18 +297,18 @@
 
 .editor-preview__filename-overlay {
   position: absolute;
-  bottom: 16px;
-  right: 24px;
-  padding: 6px 12px;
+  bottom: 12px;
+  right: 16px;
+  padding: 4px 10px;
   background: rgba(0, 0, 0, 0.6);
   color: white;
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   pointer-events: none;
   backdrop-filter: blur(4px);
   z-index: 20;
-  max-width: 300px;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -322,7 +318,7 @@
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(100dvh - 260px);
+  max-height: calc(100dvh - 220px); /* Increased from -260px to expand canvas */
   display: block;
 }
 
@@ -362,32 +358,82 @@
 .editor-preview__nav {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  margin-top: var(--space-md);
+}
+
+.editor-preview__nav .btn-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .editor-preview__nav-divider {
   width: 1px;
-  height: 24px;
+  height: 16px;
   background: var(--color-border);
   margin: 0 var(--space-sm);
+  opacity: 0.8; /* Increased from 0.5 */
 }
 
 .editor-preview__delete-btn {
-  font-size: var(--font-size-xs);
-  padding: 6px 12px;
-  transition: all 200ms ease;
+  height: 32px;
+  padding: 0 var(--space-md);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-danger);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.editor-preview__delete-btn:hover:not(:disabled) {
+  background: rgba(255, 77, 109, 0.1);
+  border-color: rgba(255, 77, 109, 0.2);
+}
+
+.editor-preview__delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555566; /* 진한 회색 (Dark Gray) */
+  min-width: 44px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 
 .editor-preview__page-info {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #555566; /* 진한 회색 (Dark Gray) */
+  min-width: 44px;
+  height: 32px;
+}
+
+.editor-preview__nav .btn-secondary {
+  color: #555566; /* 아이콘 색상도 진한 회색으로 통일 */
+}
+
+/* 다크모드에서는 기존 색상 유지 (선택 사항, 필요시 조정) */
+[data-theme="dark"] .toolbar-label,
+[data-theme="dark"] .editor-preview__page-info,
+[data-theme="dark"] .editor-preview__nav .btn-secondary {
   color: var(--color-text-primary);
-  gap: 2px;
-  min-width: 80px;
-  text-align: center;
 }
 
 .editor-preview__page-label {

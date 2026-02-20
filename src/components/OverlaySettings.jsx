@@ -45,7 +45,7 @@ export default function OverlaySettings({
   localOverlay, onLocalChange, 
   isPageSelected 
 }) {
-  const [expandedSections, setExpandedSections] = useState(new Set()); 
+  const [activeSectionId, setActiveSectionId] = useState(null); 
 
   const getOverlay = (scope) => scope === 'local' ? (localOverlay || {}) : globalOverlay;
   const getOnChange = (scope) => scope === 'local' ? onLocalChange : onGlobalChange;
@@ -78,18 +78,13 @@ export default function OverlaySettings({
       currentModes.delete(mode);
     } else {
       currentModes.add(mode);
-      setExpandedSections(prev => new Set(prev).add(section.id));
+      setActiveSectionId(section.id);
     }
     onChange({ enabledModes: Array.from(currentModes) });
   };
 
   const toggleExpanded = (sectionId) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) next.delete(sectionId);
-      else next.add(sectionId);
-      return next;
-    });
+    setActiveSectionId(prev => prev === sectionId ? null : sectionId);
   };
 
   const update = (scope, updates) => {
@@ -127,7 +122,7 @@ export default function OverlaySettings({
       </div>
 
       {/* 1. 텍스트 삽입 (Local) */}
-      <SectionWrapper section={SECTIONS[0]} isEnabled={isEnabled(SECTIONS[0])} isExpanded={expandedSections.has(SECTIONS[0].id)}
+      <SectionWrapper section={SECTIONS[0]} isEnabled={isEnabled(SECTIONS[0])} isExpanded={activeSectionId === SECTIONS[0].id}
          onToggleEnabled={() => toggleEnabled(SECTIONS[0])} onToggleExpanded={() => toggleExpanded(SECTIONS[0].id)}
          disabled={!isPageSelected}
          warning={!isPageSelected ? "페이지를 선택해야 사용할 수 있습니다." : null}
@@ -140,7 +135,7 @@ export default function OverlaySettings({
       </SectionWrapper>
 
       {/* 2. 이미지 삽입 (Local) */}
-      <SectionWrapper section={SECTIONS[1]} isEnabled={isEnabled(SECTIONS[1])} isExpanded={expandedSections.has(SECTIONS[1].id)}
+      <SectionWrapper section={SECTIONS[1]} isEnabled={isEnabled(SECTIONS[1])} isExpanded={activeSectionId === SECTIONS[1].id}
          onToggleEnabled={() => toggleEnabled(SECTIONS[1])} onToggleExpanded={() => toggleExpanded(SECTIONS[1].id)}
          disabled={!isPageSelected}
       >
@@ -151,7 +146,7 @@ export default function OverlaySettings({
       </SectionWrapper>
 
        {/* 3. 워터마크 (Global) */}
-       <SectionWrapper section={SECTIONS[2]} isEnabled={isEnabled(SECTIONS[2])} isExpanded={expandedSections.has(SECTIONS[2].id)}
+       <SectionWrapper section={SECTIONS[2]} isEnabled={isEnabled(SECTIONS[2])} isExpanded={activeSectionId === SECTIONS[2].id}
          onToggleEnabled={() => toggleEnabled(SECTIONS[2])} onToggleExpanded={() => toggleExpanded(SECTIONS[2].id)}
       >
         <TextControlGroup 
@@ -162,7 +157,7 @@ export default function OverlaySettings({
       </SectionWrapper>
 
       {/* 4. 스탬프 (Global) */}
-      <SectionWrapper section={SECTIONS[3]} isEnabled={isEnabled(SECTIONS[3])} isExpanded={expandedSections.has(SECTIONS[3].id)}
+      <SectionWrapper section={SECTIONS[3]} isEnabled={isEnabled(SECTIONS[3])} isExpanded={activeSectionId === SECTIONS[3].id}
          onToggleEnabled={() => toggleEnabled(SECTIONS[3])} onToggleExpanded={() => toggleExpanded(SECTIONS[3].id)}
       >
          <div className="overlay-field">

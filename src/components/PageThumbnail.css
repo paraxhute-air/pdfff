@@ -280,15 +280,15 @@
 
 /* List Mode Style: >-------< */
 .page-thumb__divider-trigger--list .page-thumb__divider-visual {
-  left: 50%; top: 50%; height: 2px; /* Set height directly to 2px */
-  width: 100%; /* Back to 100% since no arrows */
+  left: 50%; top: 50%; height: 2px;
+  width: 110%; /* Lengthened beyond 100% as requested */
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   overflow: hidden;
-  background: #d32f2f; /* Solid red background */
+  background: var(--color-danger); /* Use theme danger color */
 }
 
 /* The Line (Middle) - Removed background gradient, using background directly above */

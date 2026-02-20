@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c63ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00d2ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="64" height="64" rx="16" fill="url(#logo-grad)" />
+  
+  <!-- Enlarged Inner Content: PDF Page Icon -->
+  <path d="M16 12C16 10.8954 16.8954 10 18 10H38L48 20V52C48 53.1046 47.1046 54 46 54H18C16.8954 54 16 53.1046 16 52V12Z" fill="white" />
+  <path d="M38 10V18C38 19.1046 38.8954 20 40 20H48L38 10Z" fill="#e2e8f0" />
+  
+  <!-- Enlarged PDF Text -->
+  <text x="32" y="36" text-anchor="middle" fill="#6c63ff" font-family="system-ui, sans-serif" font-weight="900" font-size="12">PDF</text>
+  
+  <!-- Decoration Lines -->
+  <rect x="22" y="42" width="20" height="2" rx="1" fill="#cbd5e1" />
+  <rect x="22" y="47" width="14" height="2" rx="1" fill="#cbd5e1" />
+</svg>
