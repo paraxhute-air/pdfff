@@ -252,9 +252,9 @@ function ImageControlGroup({ overlay, onChange }) {
         </div>
       </div>
       <div className="overlay-field">
-         <label className="overlay-label">배율: {overlay?.imageScale ?? 0.5}x</label>
+         <label className="overlay-label">배율: {overlay?.imageScale ?? 0.2}x</label>
          <input type="range" className="overlay-range" min="0.1" max="2.0" step="0.1" 
-             value={overlay?.imageScale ?? 0.5} onChange={(e) => onChange({ imageScale: parseFloat(e.target.value) })} />
+             value={overlay?.imageScale ?? 0.2} onChange={(e) => onChange({ imageScale: parseFloat(e.target.value) })} />
       </div>
       <AngleControl value={overlay?.imageRotation ?? 0} onChange={(v) => onChange({ imageRotation: v })} />
       <TransparencySlider value={overlay?.imageOpacity ?? 1.0} onChange={(v) => onChange({ imageOpacity: v })} />

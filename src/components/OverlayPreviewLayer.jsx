@@ -114,7 +114,7 @@ export default function OverlayPreviewLayer({
 
     if (type === 'image') {
        if (!config.imageDataUrl) return null;
-       content = <img src={config.imageDataUrl} alt="overlay" style={{ maxWidth: '100%', display: 'block', pointerEvents: 'none' }} />;
+       content = <img src={config.imageDataUrl} alt="overlay" style={{ display: 'block', pointerEvents: 'none' }} />;
        
        position = config.imagePosition || 'middle-center';
        customX = config.imageCustomX;

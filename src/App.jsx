@@ -38,7 +38,7 @@ const DEFAULT_OVERLAY = {
   // 이미지 오버레이
   imageDataUrl: null,
   imageOpacity: 1.0,
-  imageScale: 0.5,
+  imageScale: 0.2,
   imageRotation: 0,
   imagePosition: 'middle-center',
 };
@@ -107,7 +107,7 @@ export default function App() {
        
        imageDataUrl: null,
        imageOpacity: 1.0,
-       imageScale: 0.5,
+       imageScale: 0.2,
        imageRotation: 0,
        imageCustomX: null, imageCustomY: null,
        imagePosition: 'middle-center',

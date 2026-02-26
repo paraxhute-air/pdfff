@@ -176,27 +176,50 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
 
   for (let i = 0; i < totalPages; i++) {
     const page = finalDoc.getPage(i);
-    const { width, height } = page.getSize();
-    const pageId = pages[i].id;
+    const pageData = pages[i];
+    const pageId = pageData.id;
     const localOverlay = pageOverlays[pageId];
 
-    // 공통: 중심점 기준 회전 좌표 계산 함수
-    const getRotatedCoords = (cx, cy, w, h, angleDegrees) => {
-      const rad = (angleDegrees * Math.PI) / 180;
-      const cos = Math.cos(rad);
-      const sin = Math.sin(rad);
-      
-      const dx = -w / 2;
-      const dy = -h / 2;
+    // Page Rotation Awareness
+    const pRot = page.getRotation().angle; // 0, 90, 180, 270
+    const { width: pW, height: pH } = page.getSize();
+    const isRotated = pRot === 90 || pRot === 270;
+    const vW = isRotated ? pH : pW; // Visual Width
+    const vH = isRotated ? pW : pH; // Visual Height
 
-      const rx = dx * cos - dy * sin;
-      const ry = dx * sin + dy * cos;
+    /**
+     * getFinalCoords
+     * Transforms visual center coordinates, dimensions, and rotation 
+     * into PDF coordinate system based on page rotation.
+     */
+    const getFinalCoords = (vCx, vCy, elW, elH, vAngle) => {
+       const rad = (vAngle * Math.PI) / 180;
+       const cos = Math.cos(rad);
+       const sin = Math.sin(rad);
+       const rx = (-elW / 2) * cos - (-elH / 2) * sin;
+       const ry = (-elW / 2) * sin + (-elH / 2) * cos;
+       const vx = vCx + rx;
+       const vy = vCy + ry;
 
-      return {
-        x: cx + rx,
-        y: cy + ry,
-        rotate: degrees(angleDegrees)
-      };
+       let fx, fy, fr;
+       if (pRot === 90) {
+          fx = pW - vy;
+          fy = vx;
+          fr = vAngle + 90;
+       } else if (pRot === 180) {
+          fx = pW - vx;
+          fy = pH - vy;
+          fr = vAngle + 180;
+       } else if (pRot === 270) {
+          fx = vy;
+          fy = pH - vx;
+          fr = vAngle + 270;
+       } else {
+          fx = vx;
+          fy = vy;
+          fr = vAngle;
+       }
+       return { x: fx, y: fy, rotate: degrees(fr) };
     };
 
     /**
@@ -204,32 +227,30 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
      */
     const drawTextOverlay = async (config, type) => {
        if (!config) return;
-       // Check if enabled (Global 'watermark' or Local 'text')
        const text = config.text || (type === 'watermark' ? 'Watermark' : 'Text');
        if (!text || !text.trim()) return;
 
        const font = await getFontForConfig(config);
        const fontSize = config.fontSize || 60;
        const widthOfText = font.widthOfTextAtSize(text, fontSize);
-       const heightOfText = fontSize; // Cap height approx
+       const heightOfText = fontSize; 
        
        const color = config.color ? rgb(config.color.r, config.color.g, config.color.b) : rgb(0.5,0.5,0.5);
        const opacity = config.opacity ?? 0.4;
        const angle = config.rotation ?? 0;
 
-       // Position
-       let pos;
+       // Visual Center Position
+       let vCx, vCy;
        if (config.customX !== undefined && config.customX !== null) {
-          const cx = width * config.customX;
-          const cy = height * (1 - config.customY);
-          pos = { x: cx - widthOfText / 2, y: cy - heightOfText / 2 };
+          vCx = vW * config.customX;
+          vCy = vH * (1 - config.customY);
        } else {
-          pos = calculatePosition(config.position || 'middle-center', width, height, widthOfText, heightOfText, 24);
+          const pos = calculatePosition(config.position || 'middle-center', vW, vH, widthOfText, heightOfText, 24);
+          vCx = pos.x + widthOfText / 2;
+          vCy = pos.y + heightOfText / 2;
        }
        
-       const cx = pos.x + widthOfText / 2;
-       const cy = pos.y + heightOfText / 2;
-       const textCoords = getRotatedCoords(cx, cy, widthOfText, heightOfText, angle);
+       const textCoords = getFinalCoords(vCx, vCy, widthOfText, heightOfText, angle);
 
        const drawOpts = {
           x: textCoords.x,
@@ -237,11 +258,10 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           size: fontSize,
           font,
           color,
-          opacity: opacity, 
+          opacity, 
           rotate: textCoords.rotate,
        };
 
-       // Main Text Fill
        page.drawText(text, drawOpts);
 
        // Bold Simulation
@@ -250,13 +270,18 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           const offset = fontSize * 0.005;
           page.drawText(text, { ...drawOpts, x: drawOpts.x + offset });
        }
+
+       // Italic Simulation (Skew)
+       if (config.textStyle?.italic && !isStandard) {
+          page.drawText(text, { ...drawOpts, skew: { xAxis: 0.2, yAxis: 0 } });
+       }
        
        // Underline
        if (config.textStyle?.underline) {
           const thickness = fontSize * 0.05;
           const lineW = widthOfText;
-          const lineCenterY = cy - (heightOfText * 0.4) - (fontSize * 0.1);
-          const lineCoords = getRotatedCoords(cx, lineCenterY, lineW, thickness, angle);
+          const lineCenterY = vCy - (heightOfText * 0.4) - (fontSize * 0.1);
+          const lineCoords = getFinalCoords(vCx, lineCenterY, lineW, thickness, angle);
           page.drawRectangle({
              x: lineCoords.x, y: lineCoords.y, width: lineW, height: thickness,
              color, opacity, rotate: lineCoords.rotate
@@ -265,17 +290,16 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
 
        // Border (Padded Box)
        if (config.border) {
-          const padY = fontSize * 0.12; // Tight vertical
-          const padX = fontSize * 0.25; // Snug horizontal
+          const padY = fontSize * 0.12;
+          const padX = fontSize * 0.25;
           const boxW = widthOfText + padX * 2;
           const boxH = heightOfText + padY * 2; 
-          
-          // Adjust cy slightly for visual centering in tight box
-          const boxCoords = getRotatedCoords(cx, cy + (fontSize * 0.02), boxW, boxH, angle);
+          const boxCoords = getFinalCoords(vCx, vCy + (fontSize * 0.02), boxW, boxH, angle);
           
           page.drawRectangle({
              x: boxCoords.x, y: boxCoords.y, width: boxW, height: boxH,
-             borderColor: color, borderWidth: fontSize * 0.05, opacity, rotate: boxCoords.rotate
+             borderColor: color, borderWidth: fontSize * 0.05, 
+             opacity: 0, borderOpacity: opacity, rotate: boxCoords.rotate
           });
        }
     };
@@ -293,23 +317,22 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
              embeddedImage = await finalDoc.embedJpg(config.imageDataUrl);
           }
           
-          const scale = config.imageScale ?? 0.5;
+          const scale = config.imageScale ?? 0.2;
           const opacity = config.imageOpacity ?? 1.0;
           const rotation = config.imageRotation ?? 0;
           const { width: imgW, height: imgH } = embeddedImage.scale(scale);
           
-          let pos;
+          let vCx, vCy;
           if (config.imageCustomX !== undefined && config.imageCustomX !== null) {
-             const cx = width * config.imageCustomX;
-             const cy = height * (1 - config.imageCustomY);
-             pos = { x: cx - imgW/2, y: cy - imgH/2 };
+             vCx = vW * config.imageCustomX;
+             vCy = vH * (1 - config.imageCustomY);
           } else {
-             pos = calculatePosition(config.imagePosition || 'middle-center', width, height, imgW, imgH, 24);
+             const pos = calculatePosition(config.imagePosition || 'middle-center', vW, vH, imgW, imgH, 24);
+             vCx = pos.x + imgW/2;
+             vCy = pos.y + imgH/2;
           }
           
-          const cx = pos.x + imgW/2;
-          const cy = pos.y + imgH/2;
-          const imgCoords = getRotatedCoords(cx, cy, imgW, imgH, rotation);
+          const imgCoords = getFinalCoords(vCx, vCy, imgW, imgH, rotation);
           
           page.drawImage(embeddedImage, {
              x: imgCoords.x, y: imgCoords.y, width: imgW, height: imgH,
@@ -323,111 +346,97 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
     /**
      * STAMP DRAWER HELPER
      */
-    const drawStampOverlay = (config) => {
+    const drawStampOverlay = async (config) => {
        if (!config || !config.stampText) return;
        const text = config.stampText.trim();
        if (!text) return;
        
+       const sFont = await getFontForConfig({ fontFamily: 'malgun' });
        const fontSize = config.stampFontSize || 40;
-       const widthOfText = courierFont.widthOfTextAtSize(text, fontSize);
+       const widthOfText = sFont.widthOfTextAtSize(text, fontSize);
        const heightOfText = fontSize;
        
        const colorVal = config.stampColor || { r: 0.8, g: 0.1, b: 0.1 };
        const color = rgb(colorVal.r, colorVal.g, colorVal.b);
        const opacity = config.stampOpacity ?? 0.8;
-       const angle = config.stampRotation ?? 0;
+       const angle = config.stampRotation ?? -15;
        
-       let pos;
+       let vCx, vCy;
        if (config.stampCustomX !== undefined && config.stampCustomX !== null) {
-           const cx = width * config.stampCustomX;
-           const cy = height * (1 - config.stampCustomY);
-           pos = { x: cx - widthOfText/2, y: cy - heightOfText/2 };
+           vCx = vW * config.stampCustomX;
+           vCy = vH * (1 - config.stampCustomY);
        } else {
-           pos = calculatePosition(config.stampPosition || 'bottom-right', width, height, widthOfText, heightOfText, 24);
+           const pos = calculatePosition(config.stampPosition || 'bottom-right', vW, vH, widthOfText, heightOfText, 24);
+           vCx = pos.x + widthOfText/2;
+           vCy = pos.y + heightOfText/2;
        }
 
-       const cx = pos.x + widthOfText/2;
-       const cy = pos.y + heightOfText/2;
-       const textCoords = getRotatedCoords(cx, cy, widthOfText, heightOfText * 0.8, angle);
+       const textCoords = getFinalCoords(vCx, vCy, widthOfText, heightOfText * 0.8, angle);
        
        page.drawText(text, {
           x: textCoords.x, y: textCoords.y, size: fontSize,
-          font: courierFont, color, opacity, rotate: textCoords.rotate
+          font: sFont, color, opacity, rotate: textCoords.rotate
        });
        
        if (config.stampBorder) {
           const pad = fontSize * 0.3;
           const boxW = widthOfText + pad * 2;
           const boxH = heightOfText + pad;
-          const boxCoords = getRotatedCoords(cx, cy, boxW, boxH, angle);
+          const boxCoords = getFinalCoords(vCx, vCy, boxW, boxH, angle);
           page.drawRectangle({
              x: boxCoords.x, y: boxCoords.y, width: boxW, height: boxH,
-             borderColor: color, borderWidth: 3, opacity, rotate: boxCoords.rotate
+             borderColor: color, borderWidth: 3, 
+             opacity: 0, borderOpacity: opacity, rotate: boxCoords.rotate
           });
        }
     };
 
     // --- APPLY LAYERS (Bottom to Top) ---
-    
-    // 1. Global Watermark
     if (globalOverlay && globalOverlay.enabledModes?.includes('watermark')) {
        await drawTextOverlay(globalOverlay, 'watermark');
     }
-
-    // 2. Local Image
     if (localOverlay && localOverlay.enabledModes?.includes('image')) {
        await drawImageOverlay(localOverlay);
     }
-
-    // 3. Local Text
     if (localOverlay && localOverlay.enabledModes?.includes('text')) {
        await drawTextOverlay(localOverlay, 'text');
     }
-
-    // 4. Global Stamp
     if (globalOverlay && globalOverlay.enabledModes?.includes('stamp')) {
-       drawStampOverlay(globalOverlay);
+       await drawStampOverlay(globalOverlay);
     }
     
     // 5. Head/Foot (Global)
     if (globalOverlay && globalOverlay.enabledModes?.includes('headfoot')) {
          const fontSize = globalOverlay.headfootFontSize || 10;
          const margin = 24;
-         const hfColor = globalOverlay.headfootColor
-           ? rgb(globalOverlay.headfootColor.r, globalOverlay.headfootColor.g, globalOverlay.headfootColor.b)
-           : rgb(0.5, 0.5, 0.5);
+         const hfColor = globalOverlay.headfootColor ? rgb(globalOverlay.headfootColor.r, globalOverlay.headfootColor.g, globalOverlay.headfootColor.b) : rgb(0.5, 0.5, 0.5);
          const hfAlign = globalOverlay.headfootAlign || 'center';
          const hFont = await getFontForConfig({ fontFamily: globalOverlay.fontFamily || 'malgun' });
 
          const getAlignX = (tw) => {
            if (hfAlign === 'left') return margin;
-           if (hfAlign === 'right') return width - tw - margin;
-           return (width - tw) / 2;
+           if (hfAlign === 'right') return vW - tw - margin;
+           return (vW - tw) / 2;
          };
 
          if (globalOverlay.headerText?.trim()) {
            const hText = globalOverlay.headerText.trim();
            const hWidth = hFont.widthOfTextAtSize(hText, fontSize);
+           const hPos = vToPdf ? null : { x: getAlignX(hWidth), y: vH - margin }; // Dummy for logic check
+           
+           // We can also use getFinalCoords for Head/Foot for absolute consistency
+           const hCoords = getFinalCoords(getAlignX(hWidth) + hWidth/2, vH - margin + fontSize/2, hWidth, fontSize, 0);
            page.drawText(hText, {
-             x: getAlignX(hWidth),
-             y: height - margin,
-             size: fontSize,
-             font: hFont,
-             color: hfColor,
-             opacity: 0.8,
+             x: hCoords.x, y: hCoords.y, size: fontSize, font: hFont, color: hfColor, opacity: 0.8, rotate: hCoords.rotate
            });
          }
          
          if (globalOverlay.footerText?.trim()) {
            const fText = globalOverlay.footerText.trim();
            const fWidth = hFont.widthOfTextAtSize(fText, fontSize);
+           const fCoords = getFinalCoords(getAlignX(fWidth) + fWidth/2, margin + fontSize/2, fWidth, fontSize, 0);
            page.drawText(fText, {
-             x: getAlignX(fWidth),
-             y: margin,
-             size: fontSize,
-             font: hFont,
-             color: hfColor,
-             opacity: 0.8,
+             x: fCoords.x, y: fCoords.y, size: fontSize, font: hFont, color: hfColor, opacity: 0.8, rotate: fCoords.rotate
            });
          }
     }
