@@ -202,25 +202,8 @@
   height: 32px;
   border-radius: var(--radius-sm);
   background: transparent;
-  border: 1.5px dashed var(--color-accent-primary);
   color: var(--color-accent-primary);
   transition: all var(--transition-normal);
-}
-
-.dropzone-compact-area:hover .dropzone-compact__icon {
-  background: rgba(108, 99, 255, 0.1);
-  color: var(--color-accent-primary);
-  border-style: solid;
-  transform: scale(1.05);
-}
-
-.dropzone-compact__text {
-  font-size: 10px; /* Reduced from 11px to ensure one-line */
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  line-height: 1.2;
-  margin: 0;
-  white-space: nowrap; /* Force one-line */
 }
 
 /* Responsive */

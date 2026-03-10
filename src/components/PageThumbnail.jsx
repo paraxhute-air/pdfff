@@ -37,7 +37,7 @@ export default function PageThumbnail({ page, thumbnail, index, onDelete, isOver
         className={`page-thumb ${isDragging ? 'page-thumb--dragging' : ''} ${isOver ? 'page-thumb--over' : ''} ${isSelected ? 'page-thumb--selected' : ''}`}
         {...attributes}
         {...listeners}
-        onClick={(e) => { if (onSelect) { e.stopPropagation(); onSelect(page.id); } }}
+        onClick={(e) => { if (onSelect) { e.stopPropagation(); onSelect(page.id, e); } }}
         data-filename={page.pageLabel}
       >
         {/* 삭제 버튼 */}

@@ -27,6 +27,7 @@ export default function PageGrid({
   onDelete,
   viewMode = 'grid',
   selectedPageId,
+  selectedPageIds,
   onSelectPage,
   confirmDelete,
   dividers,
@@ -103,7 +104,7 @@ export default function PageGrid({
               onDelete={onDelete}
               isOver={!!getDropPosition(page.id)}
               dropPosition={getDropPosition(page.id)}
-              isSelected={selectedPageId === page.id}
+              isSelected={selectedPageIds ? selectedPageIds.has(page.id) : selectedPageId === page.id}
               onSelect={onSelectPage}
               confirmDelete={confirmDelete}
               hasDivider={dividers?.has(index)}

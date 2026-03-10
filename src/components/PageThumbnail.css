@@ -23,6 +23,10 @@
   touch-action: none;
 }
 
+.page-thumb:focus, .page-thumb:focus-visible {
+  outline: none;
+}
+
 .page-thumb:hover {
   border-color: var(--color-accent-primary);
   transform: translateY(-2px);
@@ -45,6 +49,8 @@
 
 .page-thumb--selected {
   border-color: var(--color-accent-primary);
+  border-width: 3px;
+  padding: 6px; /* Compensate for thicker border to avoid layout shift */
   box-shadow: var(--shadow-glow);
 }
 
@@ -281,7 +287,7 @@
 /* List Mode Style: >-------< */
 .page-thumb__divider-trigger--list .page-thumb__divider-visual {
   left: 50%; top: 50%; height: 2px;
-  width: 110%; /* Lengthened beyond 100% as requested */
+  width: 150%; /* Lengthened as requested */
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;

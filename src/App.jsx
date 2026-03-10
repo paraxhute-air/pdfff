@@ -84,7 +84,8 @@ export default function App() {
   // 뷰 모드: 'preview' (A모드) | 'grid' (B모드)
   const [viewMode, setViewMode] = useState('preview');
   const [selectedPageId, setSelectedPageId] = useState(null);
-  const [deleteTargetId, setDeleteTargetId] = useState(null); 
+  const [multiSelectedIds, setMultiSelectedIds] = useState(new Set());
+  const [deleteTargetIds, setDeleteTargetIds] = useState([]); 
   const [dividers, setDividers] = useState(new Set()); 
   const [previewImage, setPreviewImage] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -144,9 +145,11 @@ export default function App() {
   useEffect(() => {
     if (pages.length > 0 && !selectedPageId) {
       setSelectedPageId(pages[0].id);
+      setMultiSelectedIds(new Set([pages[0].id]));
     }
     if (pages.length === 0) {
       setSelectedPageId(null);
+      setMultiSelectedIds(new Set());
     }
   }, [pages, selectedPageId]);
 
@@ -253,43 +256,67 @@ export default function App() {
   }, []);
 
   const handleDeleteRequest = useCallback((pageId) => {
-    setDeleteTargetId(pageId);
+    setDeleteTargetIds([pageId]);
   }, []);
 
   const confirmDeleteAction = useCallback(() => {
-    if (!deleteTargetId) return;
-    const pageId = deleteTargetId;
+    if (deleteTargetIds.length === 0) return;
 
-    setPages((prev) => prev.filter((p) => p.id !== pageId));
+    setPages((prev) => prev.filter((p) => !deleteTargetIds.includes(p.id)));
     setThumbnails((prev) => {
       const next = new Map(prev);
-      next.delete(pageId);
+      deleteTargetIds.forEach(id => next.delete(id));
       return next;
     });
     // Also remove from local overlays
     setPageOverlays(prev => {
         const next = { ...prev };
-        delete next[pageId];
+        deleteTargetIds.forEach(id => delete next[id]);
         return next;
     });
 
     setGeneratedUrl(null);
     setGeneratedBytes(null);
-    if (selectedPageId === pageId) {
+    if (deleteTargetIds.includes(selectedPageId)) {
       setSelectedPageId(null);
       setPreviewImage(null);
     }
-    setDeleteTargetId(null);
-  }, [deleteTargetId, selectedPageId]);
+    setMultiSelectedIds(prev => {
+      const next = new Set(prev);
+      deleteTargetIds.forEach(id => next.delete(id));
+      return next;
+    });
+    setDeleteTargetIds([]);
+  }, [deleteTargetIds, selectedPageId]);
 
   const cancelDeleteAction = useCallback(() => {
-    setDeleteTargetId(null);
+    setDeleteTargetIds([]);
   }, []);
 
   const handlePreviewDelete = () => {
-    if (!selectedPageId) return;
-    setDeleteTargetId(selectedPageId);
+    if (multiSelectedIds.size > 0) {
+      setDeleteTargetIds(Array.from(multiSelectedIds));
+    } else if (selectedPageId) {
+      setDeleteTargetIds([selectedPageId]);
+    }
   };
+
+  // 엔터/ESC 키 삭제 확인/취소
+  useEffect(() => {
+    if (deleteTargetIds.length === 0) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmDeleteAction();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelDeleteAction();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [deleteTargetIds, confirmDeleteAction, cancelDeleteAction]);
+
 
   const handleToggleDivider = (index) => {
     setDividers(prev => {
@@ -312,6 +339,7 @@ export default function App() {
     setGeneratedBytes(null);
     setError(null);
     setSelectedPageId(null);
+    setMultiSelectedIds(new Set());
     if (blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
@@ -369,22 +397,82 @@ export default function App() {
     await sharePdf(generatedBytes, `PDFFF-${Date.now()}.pdf`);
   }, [generatedBytes]);
 
-  const handleSelectPage = useCallback((pageId) => {
-    setSelectedPageId(pageId);
-    setPreviewZoom(1.0);
-  }, []);
+  const handleSelectPage = useCallback((pageId, event) => {
+    if (event && (event.ctrlKey || event.metaKey)) {
+      setMultiSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(pageId)) {
+          next.delete(pageId);
+        } else {
+          next.add(pageId);
+        }
+        return next;
+      });
+      setSelectedPageId(pageId);
+      setPreviewZoom(1.0);
+    } else if (event && event.shiftKey && selectedPageId) {
+      const startIdx = pages.findIndex(p => p.id === selectedPageId);
+      const endIdx = pages.findIndex(p => p.id === pageId);
+      if (startIdx !== -1 && endIdx !== -1) {
+        setMultiSelectedIds(prev => {
+          const next = new Set(prev);
+          const min = Math.min(startIdx, endIdx);
+          const max = Math.max(startIdx, endIdx);
+          for (let i = min; i <= max; i++) {
+            next.add(pages[i].id);
+          }
+          return next;
+        });
+      }
+      setSelectedPageId(pageId);
+      setPreviewZoom(1.0);
+    } else {
+      setMultiSelectedIds(new Set([pageId]));
+      setSelectedPageId(pageId);
+      setPreviewZoom(1.0);
+    }
+  }, [pages, selectedPageId]);
 
   const handlePrevPage = useCallback(() => {
     if (!selectedPageId) return;
     const idx = pages.findIndex((p) => p.id === selectedPageId);
-    if (idx > 0) setSelectedPageId(pages[idx - 1].id);
+    if (idx > 0) {
+      const prevId = pages[idx - 1].id;
+      setSelectedPageId(prevId);
+      setMultiSelectedIds(new Set([prevId]));
+    }
   }, [selectedPageId, pages]);
 
   const handleNextPage = useCallback(() => {
     if (!selectedPageId) return;
     const idx = pages.findIndex((p) => p.id === selectedPageId);
-    if (idx < pages.length - 1) setSelectedPageId(pages[idx + 1].id);
+    if (idx < pages.length - 1) {
+      const nextId = pages[idx + 1].id;
+      setSelectedPageId(nextId);
+      setMultiSelectedIds(new Set([nextId]));
+    }
   }, [selectedPageId, pages]);
+
+  // 방향키 네비게이션 및 Delete 키
+  useEffect(() => {
+    const handleNavigationKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (deleteTargetIds.length > 0) return;
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        handlePrevPage();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleNextPage();
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        handlePreviewDelete();
+      }
+    };
+    window.addEventListener('keydown', handleNavigationKeyDown);
+    return () => window.removeEventListener('keydown', handleNavigationKeyDown);
+  }, [handlePrevPage, handleNextPage, deleteTargetIds.length, multiSelectedIds, selectedPageId]);
 
   const handleZoomIn = () => setPreviewZoom(prev => Math.min(prev + 0.1, 3.0));
   const handleZoomOut = () => setPreviewZoom(prev => Math.max(prev - 0.1, 0.5));
@@ -508,11 +596,11 @@ export default function App() {
       )}
 
       {/* 삭제 확인 모달 */}
-      {deleteTargetId && (
+      {deleteTargetIds.length > 0 && (
         <div className="app-error-modal-backdrop animate-fade-in" style={{ animationDuration: '0.1s' }} onClick={cancelDeleteAction}>
           <div className="app-confirm-modal glass" onClick={(e) => e.stopPropagation()}>
             <div className="app-confirm-modal__title">페이지 삭제</div>
-            <p className="app-confirm-modal__text">정말로 이 페이지를 삭제하시겠습니까?</p>
+            <p className="app-confirm-modal__text">{deleteTargetIds.length > 1 ? `선택한 ${deleteTargetIds.length}개의 페이지를` : '이 페이지를'} 삭제하시겠습니까?</p>
             <div className="app-confirm-modal__actions">
               <button className="btn btn-secondary" onClick={cancelDeleteAction}>취소</button>
               <button className="btn btn-danger" onClick={confirmDeleteAction}>삭제</button>
@@ -547,6 +635,7 @@ export default function App() {
                   onDelete={handleDeleteRequest}
                   viewMode="list"
                   selectedPageId={selectedPageId}
+                  selectedPageIds={multiSelectedIds}
                   onSelectPage={handleSelectPage}
                 />
                 <div className="editor-sidebar-left__list-footer">
@@ -658,7 +747,7 @@ export default function App() {
                   <button 
                     className="btn btn-secondary editor-preview__delete-btn" 
                     onClick={handlePreviewDelete} 
-                    disabled={!selectedPageId}
+                    disabled={!selectedPageId && multiSelectedIds.size === 0}
                     title="현재 페이지 삭제"
                   >
                     <Trash2 size={16} />
@@ -704,6 +793,12 @@ export default function App() {
                       ))}
                     </div>
                   )}
+                  <div style={{ flex: 1 }} />
+                  {multiSelectedIds.size > 0 && (
+                     <button className="btn btn-danger" style={{ display: 'flex', alignItems: 'center', fontSize: '12px', padding: '6px 10px', height: '32px' }} onClick={() => setDeleteTargetIds(Array.from(multiSelectedIds))}>
+                        <Trash2 size={14} style={{ marginRight: '6px' }} /> 선택된 {multiSelectedIds.size}개 삭제
+                     </button>
+                  )}
                 </div>
                 <PageGrid
                   pages={pages}
@@ -714,6 +809,7 @@ export default function App() {
                   onDelete={handleDeleteRequest}
                   viewMode="grid"
                   selectedPageId={selectedPageId}
+                  selectedPageIds={multiSelectedIds}
                   onSelectPage={handleSelectPage}
                 />
               </div>

@@ -85,9 +85,6 @@ export default function DropZone({ onFilesSelected, isCompact = false, disabled 
           <div className="dropzone-compact__icon">
             {isDragOver ? <Upload size={24} /> : <Plus size={24} />}
           </div>
-          <p className="dropzone-compact__text">
-            {isDragOver ? "여기에 놓으세요" : "추가 파일을 드롭하세요"}
-          </p>
         </div>
         <input
           ref={fileInputRef}
