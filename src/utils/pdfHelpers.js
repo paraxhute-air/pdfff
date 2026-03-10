@@ -71,9 +71,10 @@ async function getFont(doc, fontFamily = 'malgun', textStyle = {}) {
  * PDF 파일을 개별 페이지로 분할합니다.
  * @param {ArrayBuffer} pdfBytes - PDF 파일의 바이트 데이터
  * @param {string} fileName - 원본 파일명
+ * @param {Function} [onProgress] - 진행률 콜백 (현재, 전체)
  * @returns {Promise<Array<{id, pageBytes, sourceFile, pageIndex, width, height}>>}
  */
-export async function splitPdfPages(pdfBytes, fileName) {
+export async function splitPdfPages(pdfBytes, fileName, onProgress) {
   const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const pageCount = srcDoc.getPageCount();
   const pages = [];
@@ -96,6 +97,10 @@ export async function splitPdfPages(pdfBytes, fileName) {
       height,
       rotation: 0,
     });
+    
+    if (onProgress) {
+       onProgress(i + 1, pageCount);
+    }
   }
 
   return pages;

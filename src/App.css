@@ -112,6 +112,9 @@
   flex-direction: column;
   height: 100%; /* Fill parent */
   min-height: 0;
+  max-width: 1440px; /* Constrain width on large screens */
+  width: 100%;
+  margin: 0 auto; /* Center horizontally */
 }
 
 /* ======= Editor Layout: Grid Mode (B모드) ======= */
@@ -315,10 +318,8 @@
 }
 
 .editor-preview__image {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: calc(100dvh - 220px); /* Increased from -260px to expand canvas */
+  width: 100%;
+  height: 100%;
   display: block;
 }
 
@@ -442,8 +443,8 @@
   color: var(--color-text-muted);
 }
 
-/* Loading Overlay */
-.app-loading {
+/* Loading Overlay with Progress */
+.app-loading-modal-backdrop {
   position: fixed;
   inset: 0;
   display: flex;
@@ -451,22 +452,67 @@
   justify-content: center;
   background: rgba(10, 10, 15, 0.7);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 200;
   animation: fadeIn 0.2s ease-out;
 }
 
-[data-theme="light"] .app-loading {
+[data-theme="light"] .app-loading-modal-backdrop {
   background: rgba(230, 230, 240, 0.75);
 }
 
-.app-loading__content {
+.app-loading-modal {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-lg) var(--space-xl);
+  justify-content: center;
+  padding: var(--space-xl) var(--space-2xl);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  min-width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  background: var(--color-bg-card);
+}
+
+.app-loading-modal__spinner {
+  width: 36px;
+  height: 36px;
+  border-width: 3px;
+  margin-bottom: var(--space-md);
+  border-top-color: var(--color-accent);
+}
+
+.app-loading-modal__text {
   font-size: var(--font-size-md);
+  font-weight: 600;
   color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+  word-break: break-all;
+}
+
+.app-loading-modal__progress-container {
+  width: 100%;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.app-loading-modal__progress-bar {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 3px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+.app-loading-modal__progress-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 /* Error modal (center of screen) */

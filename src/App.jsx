@@ -9,6 +9,7 @@ import ThemeToggle from './components/ThemeToggle';
 import { splitPdfPages, imageToPdfPage, mergePagesWithOverlay, createBlobUrl, sharePdf, isShareSupported } from './utils/pdfHelpers';
 import { readFileAsArrayBuffer, validateFile } from './utils/fileHelpers';
 import { renderThumbnail, renderThumbnails } from './utils/thumbnailRenderer';
+import ThumbnailProgressOverlay from './components/ThumbnailProgressOverlay';
 import './App.css';
 
 const DEFAULT_OVERLAY = {
@@ -73,6 +74,7 @@ export default function App() {
   const [generatedUrl, setGeneratedUrl] = useState(null);
   const [generatedBytes, setGeneratedBytes] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState(0); // 0 ~ 100
   const [error, setError] = useState(null);
 
   // 변경 감지: 마지막으로 생성했을 때의 오버레이 상태 저장 (Global + Local checksum?)
@@ -90,8 +92,11 @@ export default function App() {
   const [previewImage, setPreviewImage] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1.0);
+  const [baseScale, setBaseScale] = useState(1.0);
+  const [renderedProps, setRenderedProps] = useState(null);
 
   const blobUrlRef = useRef(null);
+  const previewContainerRef = useRef(null);
 
   // Helper to get local overlay for a page (or default)
   const getLocalOverlay = useCallback((pageId) => {
@@ -163,16 +168,45 @@ export default function App() {
     const page = pages.find((p) => p.id === selectedPageId);
     if (!page) return;
 
+    // Scale calculation using ResizeObserver
+    const calculateScale = () => {
+      if (!previewContainerRef.current) return;
+      const containerRect = previewContainerRef.current.getBoundingClientRect();
+      const containerW = containerRect.width;
+      const containerH = containerRect.height;
+      
+      const pw = page.width;
+      const ph = page.height;
+
+      const targetW = containerW * 0.9;
+      const targetH = containerH * 0.9;
+      const scaleX = targetW / pw;
+      const scaleY = targetH / ph;
+      
+      const scale = Math.min(scaleX, scaleY);
+      setBaseScale(scale);
+    };
+
+    calculateScale();
+    const resizeObserver = new ResizeObserver(() => calculateScale());
+    if (previewContainerRef.current) {
+        resizeObserver.observe(previewContainerRef.current);
+    }
+
     let cancelled = false;
     setPreviewLoading(true);
     renderThumbnail(page.pageBytes, 2.0, page.rotation || 0).then((dataUrl) => {
       if (!cancelled && dataUrl) {
         setPreviewImage(dataUrl);
+        setRenderedProps({ id: page.id, width: page.width, height: page.height, rotation: page.rotation || 0 });
       }
       setPreviewLoading(false);
     });
 
-    return () => { cancelled = true; };
+    return () => { 
+        cancelled = true; 
+        resizeObserver.disconnect();
+    };
   }, [selectedPageId, viewMode, pages]);
 
   // ... (handleFiles, generateThumbnails, handleReorder, delete handlers - KEEP AS IS)
@@ -181,6 +215,7 @@ export default function App() {
    */
   const handleFiles = useCallback(async (files) => {
     setIsLoading(true);
+    setLoadingProgress(0);
     setError(null);
     setLoadingMessage('파일을 분석하고 있습니다...');
 
@@ -195,6 +230,11 @@ export default function App() {
       console.log('Starting file processing...', files);
       const newPages = [];
       const unsupportedFiles = [];
+      
+      // Calculate total files for weight distribution
+      const totalPdfFiles = Array.from(files).filter(f => validateFile(f).type === 'pdf').length;
+      let pdfFileIndex = 0;
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const { valid, type, mimeType } = validateFile(file);
@@ -203,12 +243,19 @@ export default function App() {
           continue;
         }
 
-        setLoadingMessage(`처리 중: ${file.name} (${i + 1}/${files.length})`);
+        setLoadingMessage(`처리 중: ${file.name}`);
         const buffer = await readFileAsArrayBuffer(file);
 
         if (type === 'pdf') {
-          const pdfPages = await splitPdfPages(buffer, file.name);
+          // Splitting takes 0-50% of the total progress. 
+          // If multiple PDFs, distribute the 50% among them.
+          const baseProgress = pdfFileIndex * (50 / totalPdfFiles || 50);
+          const pdfPages = await splitPdfPages(buffer, file.name, (current, total) => {
+             const fileProgressPercent = (current / total) * (50 / totalPdfFiles || 50);
+             setLoadingProgress(baseProgress + fileProgressPercent);
+          });
           newPages.push(...pdfPages);
+          pdfFileIndex++;
         } else if (type === 'image') {
           const imgPage = await imageToPdfPage(buffer, file.name, mimeType);
           newPages.push(imgPage);
@@ -220,7 +267,16 @@ export default function App() {
       }
 
       if (newPages.length > 0) {
-        generateThumbnails(newPages);
+        setLoadingMessage('썸네일을 추출하고 있습니다...');
+        // Non-blocking thumbnail generation (50-100% of progress)
+        setIsLoading(false); // Let user see the UI and donut chart
+        generateThumbnails(newPages, (current, total) => {
+           const nextProg = 50 + (current / total) * 50;
+           setLoadingProgress(nextProg);
+           if (current === total) {
+              setTimeout(() => setLoadingProgress(0), 300);
+           }
+        });
       }
 
       setPages((prev) => {
@@ -231,14 +287,18 @@ export default function App() {
       console.error('파일 처리 오류:', err);
       setError(`파일 처리 중 오류가 발생했습니다: ${err.message}`);
     } finally {
-      setIsLoading(false);
-      setLoadingMessage('');
+      if (loadingProgress < 50) { 
+          // If we failed before thumbnails started
+          setIsLoading(false);
+          setLoadingMessage('');
+          setLoadingProgress(0);
+      }
     }
   }, []);
 
-  const generateThumbnails = useCallback(async (newPages) => {
+  const generateThumbnails = useCallback(async (newPages, progressCallback) => {
     try {
-      const thumbMap = await renderThumbnails(newPages, 0.5);
+      const thumbMap = await renderThumbnails(newPages, 0.5, progressCallback);
       setThumbnails((prev) => {
         const next = new Map(prev);
         thumbMap.forEach((dataUrl, id) => next.set(id, dataUrl));
@@ -574,12 +634,21 @@ export default function App() {
         </div>
       </header>
 
-      {/* 로딩 오버레이 */}
-      {isLoading && (
-        <div className="app-loading">
-          <div className="app-loading__content glass">
-            <div className="spinner" />
-            <span>{loadingMessage || '처리 중...'}</span>
+      {/* 1단계 파일 로딩 오버레이 (분할 작업 중) */}
+      {isLoading && loadingProgress < 50 && (
+        <div className="app-loading-modal-backdrop animate-fade-in">
+          <div className="app-loading-modal glass">
+            <div className="spinner app-loading-modal__spinner" />
+            <div className="app-loading-modal__text">{loadingMessage}</div>
+            <div className="app-loading-modal__progress-container">
+               <div 
+                 className="app-loading-modal__progress-bar"
+                 style={{ width: `${Math.round(loadingProgress * 2)}%` }} /* Scale 0-50 to 0-100 visually */
+               />
+            </div>
+            <div className="app-loading-modal__progress-text">
+               {Math.round(loadingProgress * 2)}%
+            </div>
           </div>
         </div>
       )}
@@ -638,64 +707,94 @@ export default function App() {
                   selectedPageIds={multiSelectedIds}
                   onSelectPage={handleSelectPage}
                 />
+                
                 <div className="editor-sidebar-left__list-footer">
                   <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
                 </div>
               </div>
+              
+              {/* 썸네일 생성 중 도넛 로딩바 표시 (사이드바 전체 덮기) */}
+              {loadingProgress >= 50 && loadingProgress < 100 && (
+                <ThumbnailProgressOverlay progress={(loadingProgress - 50) * 2} />
+              )}
             </aside>
 
               {/* 우측: 큰 프리뷰 */}
               <div className="editor-preview-area">
                 <div className="editor-preview__content">
-                  {previewImage ? (
-                    <>
-                      <div className="editor-preview__scroll-container">
-                        <div 
-                          className="editor-preview__image-wrapper"
-                          style={{ 
-                             zoom: previewZoom,
-                             transformOrigin: 'top left',
-                          }}
-                        >
-                          <img
-                            src={previewImage}
-                            alt={`페이지 ${selectedIndex + 1}`}
-                            className="editor-preview__image"
-                          />
-                          <OverlayPreviewLayer 
-                            globalOverlay={overlay} 
-                            localOverlay={currentLocalOverlay}
-                            onGlobalUpdate={(u) => setOverlay(prev => ({ ...prev, ...u }))} 
-                            onLocalUpdate={handleLocalOverlayChange}
-                          />
-                        </div>
-                      </div>
-                      {selectedPage && (
-                        <div className="editor-preview__filename-overlay">
-                          {selectedPage.pageLabel}
-                        </div>
-                      )}
-                    </>
-                  ) : previewLoading || selectedThumbnail ? (
-                     <div className="editor-preview__loading-wrap">
-                       {selectedThumbnail && (
-                         <img
-                           src={selectedThumbnail}
-                           alt={`페이지 ${selectedIndex + 1}`}
-                           className="editor-preview__image editor-preview__image--blurred"
-                         />
-                       )}
-                       <div className="editor-preview__loading-overlay">
-                         <div className="spinner" />
-                         <p>고해상도 렌더링 중...</p>
-                       </div>
-                     </div>
-                  ) : (
-                     <div className="editor-preview__placeholder">
-                       <div className="spinner" />
-                       <p>페이지를 렌더링하고 있습니다...</p>
-                     </div>
-                  )}
+                  {(() => {
+                    const isPreviewReady = previewImage && renderedProps && renderedProps.id === selectedPage?.id;
+                    const displayProps = isPreviewReady ? renderedProps : { ...selectedPage, rotation: 0 };
+                    
+                    const isRotated = displayProps?.rotation === 90 || displayProps?.rotation === 270;
+                    const baseW = displayProps?.width || 0;
+                    const baseH = displayProps?.height || 0;
+                    const visualW = isRotated ? baseH : baseW;
+                    const visualH = isRotated ? baseW : baseH;
+
+                    return (
+                      <>
+                        {isPreviewReady ? (
+                          <>
+                            <div className="editor-preview__scroll-container" ref={previewContainerRef}>
+                              <div 
+                                className="editor-preview__image-wrapper"
+                                style={{ 
+                                   zoom: previewZoom,
+                                   transformOrigin: 'top left',
+                                   width: `${visualW * baseScale}px`,
+                                   height: `${visualH * baseScale}px`
+                                }}
+                              >
+                                <img
+                                  src={previewImage}
+                                  alt={`페이지 ${selectedIndex + 1}`}
+                                  className={`editor-preview__image ${previewLoading ? 'editor-preview__image--blurred' : ''}`}
+                                />
+                                <OverlayPreviewLayer 
+                                  globalOverlay={overlay} 
+                                  localOverlay={currentLocalOverlay}
+                                  onGlobalUpdate={(u) => setOverlay(prev => ({ ...prev, ...u }))} 
+                                  onLocalUpdate={handleLocalOverlayChange}
+                                />
+                                {previewLoading && (
+                                  <div className="editor-preview__loading-overlay" style={{position: 'absolute', inset: 0, zIndex: 10}}>
+                                    <div className="spinner" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {selectedPage && (
+                              <div className="editor-preview__filename-overlay">
+                                {selectedPage.pageLabel}
+                              </div>
+                            )}
+                          </>
+                        ) : previewLoading || selectedThumbnail ? (
+                           <div className="editor-preview__loading-wrap" ref={previewContainerRef} style={{width: '100%', height: '100%'}}>
+                             {selectedThumbnail && (
+                               <div style={{ width: `${visualW * baseScale}px`, height: `${visualH * baseScale}px`, position: 'relative' }}>
+                                 <img
+                                   src={selectedThumbnail}
+                                   alt={`페이지 ${selectedIndex + 1}`}
+                                   className="editor-preview__image editor-preview__image--blurred"
+                                 />
+                               </div>
+                             )}
+                             <div className="editor-preview__loading-overlay" style={{position: 'absolute'}}>
+                               <div className="spinner" />
+                               <p>고해상도 렌더링 중...</p>
+                             </div>
+                           </div>
+                        ) : (
+                           <div className="editor-preview__placeholder" ref={previewContainerRef} style={{width: '100%', height: '100%'}}>
+                             <div className="spinner" />
+                             <p>페이지를 렌더링하고 있습니다...</p>
+                           </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* 페이지 네비게이션 + 삭제 */}
@@ -814,6 +913,13 @@ export default function App() {
                 />
               </div>
               <aside className="editor-sidebar">
+                <div className="editor-sidebar__add" style={{ position: 'relative' }}>
+                  <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
+                  {/* 썸네일 생성 중 도넛 로딩바 표시 (그리드 모드) */}
+                  {loadingProgress >= 50 && loadingProgress < 100 && (
+                    <ThumbnailProgressOverlay progress={(loadingProgress - 50) * 2} />
+                  )}
+                </div>
                 <div className="editor-sidebar__generate">
                   <button
                     className="btn btn-primary"

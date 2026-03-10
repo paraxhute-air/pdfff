@@ -63,9 +63,7 @@ export default function PageThumbnail({ page, thumbnail, index, onDelete, isOver
               draggable={false}
             />
           ) : (
-            <div className="page-thumb__placeholder">
-              <div className="spinner" />
-            </div>
+            <div className="page-thumb__placeholder" />
           )}
         </div>
 

@@ -128,7 +128,7 @@ export default function PageGrid({
               {thumbnails.get(activePage.id) ? (
                 <img src={thumbnails.get(activePage.id)} alt="드래그 중" className="page-thumb__image" />
               ) : (
-                <div className="page-thumb__placeholder"><div className="spinner" /></div>
+                <div className="page-thumb__placeholder" />
               )}
             </div>
           </div>

@@ -1,0 +1,43 @@
+.thumbnail-progress-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 20, 45, 0.5); /* Navy tint with 0.5 opacity */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+  border-radius: inherit; /* Fill parent rounded corners */
+}
+
+.thumbnail-progress__glass-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  z-index: 51;
+}
+
+.thumbnail-progress__svg {
+  transform: rotate(-90deg); /* Start at top and fill clockwise */
+}
+
+.thumbnail-progress__ring {
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.thumbnail-progress__text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  line-height: 1;
+}
