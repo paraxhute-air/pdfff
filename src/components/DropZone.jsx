@@ -83,7 +83,7 @@ export default function DropZone({ onFilesSelected, isCompact = false, disabled 
       >
         <div className="dropzone-compact__content">
           <div className="dropzone-compact__icon">
-            {isDragOver ? <Upload size={24} /> : <Plus size={24} />}
+            {isDragOver ? <Upload size={24} strokeWidth={2} /> : <Plus size={24} strokeWidth={2} />}
           </div>
         </div>
         <input

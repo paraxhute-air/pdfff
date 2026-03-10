@@ -11,6 +11,26 @@
   border-radius: inherit; /* Fill parent rounded corners */
 }
 
+.thumbnail-progress__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.thumbnail-progress__label {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  animation: pulseOpacity 2s ease-in-out infinite;
+}
+
+@keyframes pulseOpacity {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 1; }
+}
+
 .thumbnail-progress__glass-box {
   position: relative;
   display: flex;
@@ -35,8 +55,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 20px;
-  font-weight: 800;
-  color: #ffffff;
+  font-weight: 400; /* Removed bold effect */
+  color: #ffffff; /* Pure white without transparency */
   font-variant-numeric: tabular-nums;
   margin: 0;
   line-height: 1;

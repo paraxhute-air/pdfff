@@ -160,12 +160,12 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-sm);
-  min-height: 70px;
+  aspect-ratio: 1 / 1;
   background: transparent;
-  border: 1.5px dashed var(--color-accent-primary);
+  border: 2px dashed rgba(108, 99, 255, 0.3);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.1s ease;
   text-align: center;
   width: 120px; /* Match thumbnail width */
   margin: 0 auto;
@@ -173,9 +173,13 @@
 
 .dropzone-compact-area:hover {
   background: rgba(108, 99, 255, 0.05);
-  border-style: solid; /* Changed from dashed to solid on hover */
+  border: 2px solid rgba(108, 99, 255, 0.8);
   box-shadow: none;
   transform: none;
+}
+
+.dropzone-compact-area:hover .dropzone-compact__icon {
+  color: rgba(108, 99, 255, 0.9);
 }
 
 .dropzone-compact-area--active {
@@ -202,7 +206,7 @@
   height: 32px;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--color-accent-primary);
+  color: rgba(108, 99, 255, 0.4);
   transition: all var(--transition-normal);
 }
 

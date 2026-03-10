@@ -80,9 +80,9 @@
   --font-size-3xl: 2.5rem;
 
   /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 100ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* === Light Theme === */

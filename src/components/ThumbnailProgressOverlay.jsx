@@ -10,38 +10,15 @@ export default function ThumbnailProgressOverlay({ progress }) {
 
   return (
     <div className="thumbnail-progress-overlay animate-fade-in">
-      <div className="thumbnail-progress__glass-box">
-        <svg
-          height={size}
-          width={size}
-          className="thumbnail-progress__svg"
-        >
-          {/* Background Ring */}
-          <circle
-            stroke="var(--color-bg-primary)"
-            fill="transparent"
-            strokeWidth={strokeWidth}
-            r={radius}
-            cx={size / 2}
-            cy={size / 2}
-          />
-          {/* Progress Ring */}
-          <circle
-            stroke="var(--color-accent-primary)"
-            fill="transparent"
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference + ' ' + circumference}
-            style={{ strokeDashoffset }}
-            strokeLinecap="round"
-            r={radius}
-            cx={size / 2}
-            cy={size / 2}
-            className="thumbnail-progress__ring"
-          />
-        </svg>
-        <span className="thumbnail-progress__text">
-          {Math.round(progress)}%
-        </span>
+      <div className="thumbnail-progress__content">
+        <span className="thumbnail-progress__label">Loading...</span>
+        <div className="thumbnail-progress__glass-box">
+          <svg height={size} width={size} className="thumbnail-progress__svg">
+            <circle stroke="var(--color-bg-primary)" fill="transparent" strokeWidth={strokeWidth} r={radius} cx={size / 2} cy={size / 2} />
+            <circle stroke="var(--color-accent-primary)" fill="transparent" strokeWidth={strokeWidth} strokeDasharray={circumference + ' ' + circumference} style={{ strokeDashoffset }} strokeLinecap="round" r={radius} cx={size / 2} cy={size / 2} className="thumbnail-progress__ring" />
+          </svg>
+          <span className="thumbnail-progress__text">{Math.round(progress)}%</span>
+        </div>
       </div>
     </div>
   );

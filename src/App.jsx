@@ -602,7 +602,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="app-header__title">PDFFF.</h1>
-            <p className="app-header__tagline">브라우저에서 안전하게 PDF를 편집하세요</p>
+            <span className="app-header__subtitle">웹 브라우저에서 간편하게 PDF를 편집하세요</span>
           </div>
         </div>
         <div className="app-header__actions">
@@ -706,6 +706,9 @@ export default function App() {
                   selectedPageId={selectedPageId}
                   selectedPageIds={multiSelectedIds}
                   onSelectPage={handleSelectPage}
+                  onAddFiles={handleFiles}
+                  isLoading={isLoading}
+                  loadingProgress={loadingProgress}
                 />
                 
                 <div className="editor-sidebar-left__list-footer">
@@ -910,16 +913,12 @@ export default function App() {
                   selectedPageId={selectedPageId}
                   selectedPageIds={multiSelectedIds}
                   onSelectPage={handleSelectPage}
+                  onAddFiles={handleFiles}
+                  isLoading={isLoading}
+                  loadingProgress={loadingProgress}
                 />
               </div>
               <aside className="editor-sidebar">
-                <div className="editor-sidebar__add" style={{ position: 'relative' }}>
-                  <DropZone onFilesSelected={handleFiles} isCompact disabled={isLoading} />
-                  {/* 썸네일 생성 중 도넛 로딩바 표시 (그리드 모드) */}
-                  {loadingProgress >= 50 && loadingProgress < 100 && (
-                    <ThumbnailProgressOverlay progress={(loadingProgress - 50) * 2} />
-                  )}
-                </div>
                 <div className="editor-sidebar__generate">
                   <button
                     className="btn btn-primary"

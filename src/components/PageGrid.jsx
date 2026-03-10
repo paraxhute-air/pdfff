@@ -14,6 +14,8 @@ import {
 } from '@dnd-kit/sortable';
 import { useState, useCallback } from 'react';
 import PageThumbnail from './PageThumbnail';
+import DropZone from './DropZone';
+import ThumbnailProgressOverlay from './ThumbnailProgressOverlay';
 import './PageGrid.css';
 
 /**
@@ -27,8 +29,11 @@ export default function PageGrid({
   onDelete,
   viewMode = 'grid',
   selectedPageId,
-  selectedPageIds,
+  selectedPageIds = new Set(),
   onSelectPage,
+  onAddFiles,
+  isLoading = false,
+  loadingProgress = 0,
   confirmDelete,
   dividers,
   onToggleDivider,
@@ -94,8 +99,12 @@ export default function PageGrid({
         items={pages.map((p) => p.id)}
         strategy={isListMode ? verticalListSortingStrategy : rectSortingStrategy}
       >
-        <div className={`page-grid ${isListMode ? 'page-grid--list' : 'page-grid--grid'}`}>
-          {pages.map((page, index) => (
+        <div 
+          className={`page-grid ${isListMode ? 'page-grid--list' : 'page-grid--grid'}`}
+          style={{ overflowY: (!isListMode && loadingProgress >= 50 && loadingProgress < 100) ? 'hidden' : 'auto' }}
+        >
+          {/* Batch Reveal: 썸네일 생성 중(50~100%)에는 임시 카드를 아예 그리지 않음 */}
+          {(!(!isListMode && loadingProgress >= 50 && loadingProgress < 100)) && pages.map((page, index) => (
             <PageThumbnail
               key={page.id}
               page={page}
@@ -112,6 +121,18 @@ export default function PageGrid({
               viewMode={viewMode}
             />
           ))}
+
+          {/* 그리드 모드: 마지막 카드에 추가 버튼 겸 DropZone. */}
+          {!isListMode && onAddFiles && (
+            <div className="page-thumb-wrapper page-thumb-wrapper--add">
+              <DropZone onFilesSelected={onAddFiles} isCompact disabled={isLoading} />
+            </div>
+          )}
+          
+          {/* 그리드 모드: 썸네일 생성 중 도넛 로딩바 (그리드 전체 덮기) */}
+          {!isListMode && loadingProgress >= 50 && loadingProgress < 100 && (
+            <ThumbnailProgressOverlay progress={(loadingProgress - 50) * 2} />
+          )}
         </div>
       </SortableContext>
 

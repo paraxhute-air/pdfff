@@ -2,14 +2,26 @@
 
 /* Grid mode (B모드) */
 .page-grid--grid {
+  position: relative; /* Added to contain absolute overlay */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--space-md);
   gap: var(--space-md);
   padding: var(--space-md);
   background: var(--color-bg-canvas);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.page-grid--grid .page-thumb-wrapper {
+  align-items: stretch; /* 썸네일(플레이스홀더)이 그리드 너비를 가득 채우도록 변경 */
+  width: 100%;
+}
+
+.page-grid--grid .page-thumb {
+  width: 100%;
 }
 
 /* List mode (A모드 사이드바) */
@@ -78,4 +90,32 @@
   .page-grid--grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
+}
+
+/* Inline Add DropZone (Grid Mode) */
+.page-thumb-wrapper--add {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1; /* Square Ratio */
+  background: transparent;
+  border: 2px dashed rgba(108, 99, 255, 0.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  width: 100%;
+  margin: auto 0; /* Vertically center in flex stretch */
+}
+
+.page-thumb-wrapper--add:hover {
+  background: rgba(108, 99, 255, 0.05); /* Matching DropZone.css compact hover */
+  border: 2px solid rgba(108, 99, 255, 0.8);
+}
+
+.page-thumb-wrapper--add .dropzone-compact-area {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
 }
