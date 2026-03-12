@@ -446,7 +446,7 @@ export default function App() {
     if (!generatedUrl) return;
     const a = document.createElement('a');
     a.href = generatedUrl;
-    a.download = `PDFFF-output-${Date.now()}.pdf`;
+    a.download = `SLEEK-PDF-output-${Date.now()}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -454,7 +454,7 @@ export default function App() {
 
   const handleShare = useCallback(async () => {
     if (!generatedBytes) return;
-    await sharePdf(generatedBytes, `PDFFF-${Date.now()}.pdf`);
+    await sharePdf(generatedBytes, `SLEEK-PDF-${Date.now()}.pdf`);
   }, [generatedBytes]);
 
   const handleSelectPage = useCallback((pageId, event) => {
@@ -601,7 +601,7 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <h1 className="app-header__title">PDFFF.</h1>
+            <h1 className="app-header__title">SLEEK PDF</h1>
             <span className="app-header__subtitle">웹 브라우저에서 간편하게 PDF를 편집하세요</span>
           </div>
         </div>

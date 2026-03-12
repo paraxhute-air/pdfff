@@ -51,11 +51,11 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.2;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
 }
 
-.app-header__tagline {
-  font-size: var(--font-size-xs);
+.app-header__subtitle {
+  font-size: 13px;
   color: var(--color-text-muted);
 }
 
