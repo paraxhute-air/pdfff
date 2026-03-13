@@ -30,6 +30,7 @@
   flex-direction: column;
   gap: var(--space-sm);
   padding: var(--space-sm) 0;
+  overflow-x: hidden;
 }
 
 .page-grid--list .page-thumb-wrapper {

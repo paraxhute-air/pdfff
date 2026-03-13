@@ -101,7 +101,7 @@ export default function PageGrid({
       >
         <div 
           className={`page-grid ${isListMode ? 'page-grid--list' : 'page-grid--grid'}`}
-          style={{ overflowY: (!isListMode && loadingProgress >= 50 && loadingProgress < 100) ? 'hidden' : 'auto' }}
+          style={{ overflowY: isListMode ? 'visible' : ((loadingProgress >= 50 && loadingProgress < 100) ? 'hidden' : 'auto') }}
         >
           {/* Batch Reveal: 썸네일 생성 중(50~100%)에는 임시 카드를 아예 그리지 않음 */}
           {(!(!isListMode && loadingProgress >= 50 && loadingProgress < 100)) && pages.map((page, index) => (
