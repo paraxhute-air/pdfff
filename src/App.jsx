@@ -744,7 +744,8 @@ export default function App() {
                               <div style={{ 
                                 width: `${visualW * baseScale * previewZoom}px`, 
                                 height: `${visualH * baseScale * previewZoom}px`,
-                                position: 'relative'
+                                position: 'relative',
+                                margin: 'auto'
                               }}>
                                 <div 
                                   className="editor-preview__image-wrapper"

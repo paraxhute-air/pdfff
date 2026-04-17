@@ -275,6 +275,9 @@ function DraggableElement({
     const container = containerRef.current.getBoundingClientRect();
     const element = elementRef.current.getBoundingClientRect();
     
+    const scaleX = container.width / containerRef.current.offsetWidth;
+    const scaleY = container.height / containerRef.current.offsetHeight;
+    
     const centerX = element.left + element.width / 2;
     const centerY = element.top + element.height / 2;
     
@@ -284,8 +287,8 @@ function DraggableElement({
     });
     
     setCurrentCenter({
-      x: centerX - container.left,
-      y: centerY - container.top
+      x: (centerX - container.left) / scaleX,
+      y: (centerY - container.top) / scaleY
     });
     
     setIsDragging(true);
@@ -297,17 +300,20 @@ function DraggableElement({
     const handleMove = (e) => {
        if (!containerRef.current) return;
        const container = containerRef.current.getBoundingClientRect();
+       const scaleX = container.width / containerRef.current.offsetWidth;
+       const scaleY = container.height / containerRef.current.offsetHeight;
        
        setCurrentCenter({
-          x: e.clientX - container.left - dragOffset.x,
-          y: e.clientY - container.top - dragOffset.y
+          x: (e.clientX - container.left - dragOffset.x) / scaleX,
+          y: (e.clientY - container.top - dragOffset.y) / scaleY
        });
     };
     
     const handleUp = () => {
        setIsDragging(false);
        if (containerRef.current && currentCenter.x !== null) {
-          const { width, height } = containerRef.current.getBoundingClientRect();
+          const width = containerRef.current.offsetWidth;
+          const height = containerRef.current.offsetHeight;
           onDragEnd({ type, scope }, currentCenter.x / width, currentCenter.y / height);
        }
     };
