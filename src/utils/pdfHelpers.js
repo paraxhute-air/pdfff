@@ -242,7 +242,7 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
        
        const color = config.color ? rgb(config.color.r, config.color.g, config.color.b) : rgb(0.5,0.5,0.5);
        const opacity = config.opacity ?? 0.4;
-       const angle = config.rotation ?? 0;
+       const angle = -(config.rotation ?? 0);
 
        // Visual Center Position
        let vCx, vCy;
@@ -267,18 +267,21 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           rotate: textCoords.rotate,
        };
 
-       page.drawText(text, drawOpts);
-
-       // Bold Simulation
        const isStandard = ['courier','helvetica','times'].includes(config.fontFamily);
-       if (config.textStyle?.bold && !isStandard) {
-          const offset = fontSize * 0.005;
-          page.drawText(text, { ...drawOpts, x: drawOpts.x + offset });
+       const isItalic = config.textStyle?.italic && !isStandard;
+       const isBold = config.textStyle?.bold && !isStandard;
+
+       const finalDrawOpts = { ...drawOpts };
+       if (isItalic) {
+          finalDrawOpts.skew = { xAxis: -15, yAxis: 0 };
        }
 
-       // Italic Simulation (Skew)
-       if (config.textStyle?.italic && !isStandard) {
-          page.drawText(text, { ...drawOpts, skew: { xAxis: 0.2, yAxis: 0 } });
+       page.drawText(text, finalDrawOpts);
+
+       // Bold Simulation
+       if (isBold) {
+          const offset = fontSize * 0.02;
+          page.drawText(text, { ...finalDrawOpts, x: finalDrawOpts.x + offset });
        }
        
        // Underline
@@ -324,7 +327,7 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
           
           const scale = config.imageScale ?? 0.2;
           const opacity = config.imageOpacity ?? 1.0;
-          const rotation = config.imageRotation ?? 0;
+          const rotation = -(config.imageRotation ?? 0);
           const { width: imgW, height: imgH } = embeddedImage.scale(scale);
           
           let vCx, vCy;
@@ -352,8 +355,8 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
      * STAMP DRAWER HELPER
      */
     const drawStampOverlay = async (config) => {
-       if (!config || !config.stampText) return;
-       const text = config.stampText.trim();
+       if (!config) return;
+       const text = (config.stampText || 'CONFIDENTIAL').trim();
        if (!text) return;
        
        const sFont = await getFontForConfig({ fontFamily: 'malgun' });
@@ -364,7 +367,7 @@ export async function mergePagesWithOverlay(pages, globalOverlay = null, pageOve
        const colorVal = config.stampColor || { r: 0.8, g: 0.1, b: 0.1 };
        const color = rgb(colorVal.r, colorVal.g, colorVal.b);
        const opacity = config.stampOpacity ?? 0.8;
-       const angle = config.stampRotation ?? -15;
+       const angle = -(config.stampRotation ?? -15);
        
        let vCx, vCy;
        if (config.stampCustomX !== undefined && config.stampCustomX !== null) {

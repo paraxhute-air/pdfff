@@ -120,7 +120,7 @@ export default function OverlayPreviewLayer({
        customX = config.imageCustomX;
        customY = config.imageCustomY;
        rotation = config.imageRotation ?? 0;
-       scale = config.imageScale ?? 0.5;
+       scale = config.imageScale ?? 0.2;
        style = { opacity: config.imageOpacity ?? 1 };
 
     } else if (type === 'stamp') {

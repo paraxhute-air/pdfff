@@ -175,8 +175,9 @@ export default function App() {
       const containerW = containerRect.width;
       const containerH = containerRect.height;
       
-      const pw = page.width;
-      const ph = page.height;
+      const isRotated = page.rotation === 90 || page.rotation === 270;
+      const pw = isRotated ? page.height : page.width;
+      const ph = isRotated ? page.width : page.height;
 
       const targetW = containerW * 0.9;
       const targetH = containerH * 0.9;
@@ -740,16 +741,24 @@ export default function App() {
                         {isPreviewReady ? (
                           <>
                             <div className="editor-preview__scroll-container" ref={previewContainerRef}>
-                              <div 
-                                className="editor-preview__image-wrapper"
-                                style={{ 
-                                   zoom: previewZoom,
-                                   transformOrigin: 'top left',
-                                   width: `${visualW * baseScale}px`,
-                                   height: `${visualH * baseScale}px`
-                                }}
-                              >
-                                <img
+                              <div style={{ 
+                                width: `${visualW * baseScale * previewZoom}px`, 
+                                height: `${visualH * baseScale * previewZoom}px`,
+                                position: 'relative'
+                              }}>
+                                <div 
+                                  className="editor-preview__image-wrapper"
+                                  style={{ 
+                                     transform: `scale(${baseScale * previewZoom})`,
+                                     transformOrigin: 'top left',
+                                     width: `${visualW}px`,
+                                     height: `${visualH}px`,
+                                     position: 'absolute',
+                                     top: 0,
+                                     left: 0
+                                  }}
+                                >
+                                  <img
                                   src={previewImage}
                                   alt={`페이지 ${selectedIndex + 1}`}
                                   className={`editor-preview__image ${previewLoading ? 'editor-preview__image--blurred' : ''}`}
@@ -765,6 +774,7 @@ export default function App() {
                                     <div className="spinner" />
                                   </div>
                                 )}
+                                </div>
                               </div>
                             </div>
                             {selectedPage && (
